@@ -1,3 +1,7 @@
+# Diagram
+
+![An image of what's happening here](software_diagram.png)
+
 # Overview
 
 ### This Repository contains the following:
