@@ -2,7 +2,7 @@
 
 ### This Repository contains the following:
 
-- a diagram ("softwork_diagram.png"), also found in [FigmaJam](https://www.figma.com/file/fGmlJz6MOEMSTQu3Qgcmxb/ATLS-5240-Brainstroming?type=whiteboard&node-id=120-571&t=0YDS4JY2bHAS9YUE-0)
+- a diagram (["software_diagram.png"](https://github.com/jfakult/Video_Streaming/blob/main/software_diagram.png)), also found in [FigmaJam](https://www.figma.com/file/fGmlJz6MOEMSTQu3Qgcmxb/ATLS-5240-Brainstroming?type=whiteboard&node-id=120-571&t=0YDS4JY2bHAS9YUE-0)
 - a frontend (vuejs + quasarjs)
 - a backend (python + websockets)
 - some configs (nginx, dnsmasq)
@@ -34,7 +34,7 @@ Add the .conf files to their correct places
 
 # How it works (roughly)
 
-See diagram "software_diagram.png" for visuals
+See diagram ["software_diagram.png"](https://github.com/jfakult/Video_Streaming/blob/main/software_diagram.png) for visuals
 
 ### DNS
 
