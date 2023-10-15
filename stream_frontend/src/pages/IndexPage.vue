@@ -120,6 +120,7 @@ export default {
         mode: 'static',
         position: { left: '50%', top: '50%' },
         size: 150,
+        color: "red"
       });
 
       joystick.on('move', (evt, data) => {
