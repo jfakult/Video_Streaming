@@ -1,25 +1,17 @@
 <template>
-  <v-app>
-    <div class="video-container">
-      <video
-        id="my-video"
-        class="video-js fullscreen-video"
-        controls
-        autoplay
-        loop
-        muted
-      >
-      </video>
+  <q-page class="video-container">
+    <video
+      id="my-video"
+      class="video-js fullscreen-video"
+      controls
+      autoplay
+      loop
+      muted
+    ></video>
 
-      <div class="top-right">
-        <v-icon>mdi-battery</v-icon>
-      </div>
-
-      <div class="bottom-right">
-        <v-icon>mdi-camera</v-icon>
-      </div>
-    </div>
-  </v-app>
+    <q-icon name="battery_full" class="top-right" size="md" />
+    <q-icon name="photo_camera" class="bottom-right" size="md" />
+  </q-page>
 </template>
 
 <script>
@@ -27,22 +19,23 @@ import videojs from 'video.js';
 import 'video.js/dist/video-js.css';
 
 export default {
-  name: 'App',
+  name: 'PageIndex',
   mounted() {
     this.player = videojs('my-video');
     this.player.src({
-      src: '/live', // replace with your live stream URL
+      src: 'video/sample-5s.mp4', // replace with your live stream URL
       type: 'application/x-mpegURL'
     });
   },
-  beforeUnmount() {
+  beforeUmount() {
     if (this.player) {
       this.player.dispose();
     }
   }
 }
 </script>
-<style>
+
+<style scoped>
 .video-container {
   position: relative;
   width: 100%;
