@@ -130,3 +130,20 @@ jobs:
     
         # Password of default wifi network to connect to.
         wpa-password: ''
+        config: |
+           #!/bin/bash
+           apt-get update
+           apt-get install -y python3-pip git
+           mkdir -p /usr/local/src
+           cd /usr/local/src
+           git clone https://git.libcamera.org/libcamera/libcamera.git
+           cd libcamera
+           meson build
+           ninja -C build
+
+
+
+    - uses: actions/upload-artifact@v3
+      with:
+        name: pi-gen-image
+        path: ${{ steps.build.outputs.image-path }}
