@@ -7,14 +7,14 @@ on:
   workflow_dispatch:
 
 jobs:
-  set-up-new-packages:
+  build:
     runs-on: ubuntu-latest
+
     steps:
-      # Create a stage 'new-package-stage' adding python packages
-      # we can add other stuff to this script as required
-      # note that this clumsily creates a new pi-gen stage and inserts it onto the filesystem
-      # the next stpe then references the on-fs-stage and not this action
-      - run: |
+    - name: Checkout repository
+      uses: actions/checkout@v2
+    - name: Add Step
+      run: |
           mkdir -p test-stage/package-test &&
           {
           cat > test-stage/package-test/00-run-chroot.sh <<-EOF
@@ -34,14 +34,7 @@ jobs:
           EOF
           } &&
           chmod +x test-stage/prerun.sh
-
-
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
+      
     - name: Build pi Image
       id: build
       uses: usimd/pi-gen-action@v1
