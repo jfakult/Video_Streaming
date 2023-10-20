@@ -14,6 +14,7 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v2
     - name: Build pi Image
+      id: build
       uses: usimd/pi-gen-action@v1
       with:
         # Compression to apply on final image (either "none", "zip", "xz" or "gz").
