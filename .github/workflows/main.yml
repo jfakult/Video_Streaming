@@ -91,7 +91,7 @@ jobs:
     
         # Release version of pi-gen to use. This can both be a branch or tag name known in 
         # the pi-gen repository.
-        pi-gen-version: arm64
+        pi-gen-version: 2023-05-03-raspios-bullseye
     
         # The release version to build images against. Valid values are jessie, stretch, 
         # buster, bullseye, bookworm, and testing.
@@ -111,7 +111,7 @@ jobs:
         stage-list: stage0 stage1 stage2
     
         # System timezone.
-        timezone: Europe/London
+        timezone: America/Denver
     
         # Use qcow2 images to reduce space and runtime requirements.
         use-qcow2: 1
@@ -130,11 +130,3 @@ jobs:
     
         # Password of default wifi network to connect to.
         wpa-password: ''
-        config: |
-              #!/bin/bash
-              apt-get update
-              apt-get install -y wiringpi python3-pil python3-numpy git unzip cmake meson ninja-build python3-pip python3-setuptools python3-wheel python3-yaml libboost-dev libgnutls28-dev libdrm-dev qtbase5-dev
-              git clone https://git.libcamera.org/libcamera/libcamera.git
-              cd libcamera
-              meson build
-              ninja -C build
