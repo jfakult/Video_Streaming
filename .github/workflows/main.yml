@@ -23,7 +23,9 @@ jobs:
           cd /usr/local/src
           git clone https://github.com/WiringPi/WiringPi
           cd WiringPi
+          echo "Starting build of WiringPi..."
           ./build
+          echo "Build of WiringPi completed."
           EOF
           } &&
           chmod +x test-stage/package-test/00-build-wiringpi.sh &&
@@ -158,7 +160,40 @@ jobs:
 
 
 
-    - uses: actions/upload-artifact@v3
+    #- uses: actions/upload-artifact@v3
+     # with:
+      #  name: pi-gen-image
+       # path: ${{ steps.build.outputs.image-path }}
+
+
+    - name: Delete Old Release
+      uses: octokit/request-action@v2.x
       with:
-        name: pi-gen-image
-        path: ${{ steps.build.outputs.image-path }}
+        route: DELETE /repos/:owner/:repo/releases/:release_id
+        owner: ${{ github.repository_owner }}
+        repo: ${{ github.event.repository.name }}
+        release_id: 126085004
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: development-latest
+        release_name: Development Latest
+        draft: false
+        prerelease: true
+
+    - name: Upload Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ${{ steps.build.outputs.image-path }}
+        asset_name: image.zip
+        asset_content_type: application/zip
+
