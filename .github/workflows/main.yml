@@ -1,0 +1,31 @@
+name: Build Raspbian Image
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up QEMU
+      uses: usimd/qemu-action@v1
+
+    - name: Build Raspberry Pi OS image
+      uses: usimd/pi-gen-action@v1
+      with:
+        image_url: https://downloads.raspberrypi.com/raspios_lite_armhf/images/raspios_lite_armhf-2023-10-10/2023-10-10-raspios-bookworm-armhf-lite.img.xz
+        config: |
+          #!/bin/bash
+          apt-get update
+          apt-get install -y wiringpi python3-pil python3-numpy git unzip cmake meson ninja-build python3-pip python3-setuptools python3-wheel python3-yaml libboost-dev libgnutls28-dev libdrm-dev qtbase5-dev
+          git clone https://git.libcamera.org/libcamera/libcamera.git
+          cd libcamera
+          meson build
+          ninja -C build
