@@ -2,7 +2,7 @@
 # This cleans up the boot config files
 
 #remove any auto detect lines
-sudo sed -i '/camera_auto_detect/d' /boot/config.txt
+sed -i '/camera_auto_detect/d' /boot/config.txt
 
 #disable camera autodetect and add overlays for both the camera ande display
 echo 'camera_auto_detect=0' >> /boot.config.txt

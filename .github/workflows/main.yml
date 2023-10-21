@@ -20,6 +20,26 @@ jobs:
           cp -r pi_gen/* . &&
           find "custom-stage" -type f -name "*.sh" -exec chmod +x {} \;
 
+    - name: Checkout repository inside VM #This can't be in a static XX-run script because i want access to the environment variables
+      run: |
+       
+          {
+          cat > custom-stage/02-build/99-run.sh <<-EOF
+          #!/bin/bash
+          cd /home/pi
+          repo_url="https://github.com/${{ github.repository }}"
+          repo_name=$(basename "$repo_url" .git)
+          
+          sudo -u pi git clone "$repo_url"
+          sudo -u pi cd "$repo_name"
+
+          # Check out the branch that triggered the workflow
+          sudo -u pi git checkout ${{github.ref}}
+          EOF
+          } &&
+          chmod +x custom-stage/02-build/99-run.sh
+
+
     - name: Build pi Image
       id: build
       uses: usimd/pi-gen-action@v1
@@ -138,9 +158,6 @@ jobs:
     
         # Password of default wifi network to connect to.
         wpa-password: ''
-
-
-    
     
     - name: Delete Latest Release
       run: |
@@ -178,5 +195,5 @@ jobs:
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
         asset_path: ${{ steps.build.outputs.image-path }}
-        asset_name: image.zip
+        asset_name: image-${{ github.event.release.tag_name }}-${{ github.run_id }}.zip
         asset_content_type: application/zip
