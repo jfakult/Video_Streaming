@@ -17,7 +17,7 @@ jobs:
     - name: Add Custom Stage #This copies files from the git repo and puts them into the pi_gen hierarchy
       run: |
           find . &&
-          cp -r Video_Streaming/pi_gen/* .&&
+          cp -r pi_gen/* .&&
           find "custom-stage" -type f -name "*.sh" -exec chmod +x {} \;
 
     - name: Build pi Image
