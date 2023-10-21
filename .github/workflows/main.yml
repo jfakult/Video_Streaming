@@ -166,15 +166,6 @@ jobs:
        # path: ${{ steps.build.outputs.image-path }}
 
 
-    - name: Delete Old Release
-      uses: octokit/request-action@v2.x
-      with:
-        route: DELETE /repos/:owner/:repo/releases/:release_id
-        owner: ${{ github.repository_owner }}
-        repo: ${{ github.event.repository.name }}
-        release_id: 126085004
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Create Release
       id: create_release
