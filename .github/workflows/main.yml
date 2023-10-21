@@ -14,9 +14,9 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
-    - name: Add Step
+    - name: Add Custom Stage #This copies files from the git repo and puts them into the pi_gen hierarchy
       run: |
-          cp -r video_streaming/pi_gen/* .&&
+          cp -r Video_Streaming/pi_gen/* .&&
           find "custom-stage" -type f -name "*.sh" -exec chmod +x {} \;
 
     - name: Build pi Image
@@ -144,7 +144,7 @@ jobs:
     - name: Delete Latest Release
       run: |
         response=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-          -H "Accept: application/vnd.github.v3+json" \
+          -H "Accept: applicati     on/vnd.github.v3+json" \
           "https://api.github.com/repos/${{ github.repository }}/releases/tags/development-latest")
         release_id=$(echo "$response" | jq '.id')
         if [ "$release_id" != "null" ]; then
