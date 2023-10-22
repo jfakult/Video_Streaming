@@ -27,6 +27,9 @@ jobs:
           cat > custom-stage/02-build/99-run-chroot.sh <<-EOF
           #!/bin/bash
           cd /home/pi
+          echo Github repo is ${{ github.repository }}
+          echo Github ref is ${{ github.ref }}  
+          
           repo_url="https://github.com/${{ github.repository }}"
           repo_name=$(basename "$repo_url" .git)
           

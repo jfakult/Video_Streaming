@@ -18,10 +18,10 @@ tar -xzvf "$temp_dir/$file_name" -C "$temp_dir"
 
 # Commenting out a few steps so i can get a binary file out!
 # Move the mediamtx binary to /usr/local/bin/
-#mv "$temp_dir/mediamtx" /usr/local/bin/
+mv "$temp_dir/mediamtx" /usr/local/bin/
 
 # Set execute permission
-#chmod +x /usr/local/bin/mediamtx
+chmod +x /usr/local/bin/mediamtx
 
 # Clean up the temporary directory
-#rm -r "$temp_dir"
+rm -r "$temp_dir"
