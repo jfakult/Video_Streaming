@@ -24,7 +24,7 @@ jobs:
       run: |
        
           {
-          cat > custom-stage/02-build/99-run.sh <<-EOF
+          cat > custom-stage/02-build/99-run-chroot.sh <<-EOF
           #!/bin/bash
           cd /home/pi
           repo_url="https://github.com/${{ github.repository }}"
