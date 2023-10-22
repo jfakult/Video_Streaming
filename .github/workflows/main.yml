@@ -37,7 +37,7 @@ jobs:
           sudo -u pi git checkout ${{github.ref}}
           EOF
           } &&
-          chmod +x custom-stage/02-build/99-run.sh
+          chmod +x custom-stage/02-build/99-run-chroot.sh
 
 
     - name: Build pi Image
