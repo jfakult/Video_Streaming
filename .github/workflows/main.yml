@@ -30,11 +30,11 @@ jobs:
           repo_url="https://github.com/${{ github.repository }}"
           repo_name=$(basename "$repo_url" .git)
           
-          sudo -u pi git clone "$repo_url"
-          sudo -u pi cd "$repo_name"
+          echo sudo -u pi git clone "$repo_url"
+          echo sudo -u pi cd "$repo_name"
 
           # Check out the branch that triggered the workflow
-          sudo -u pi git checkout ${{github.ref}}
+          echo sudo -u pi git checkout ${{github.ref}}
           EOF
           } &&
           chmod +x custom-stage/02-build/99-run-chroot.sh
