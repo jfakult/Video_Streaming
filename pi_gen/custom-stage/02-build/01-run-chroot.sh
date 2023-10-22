@@ -8,7 +8,8 @@ meson build
 ninja -C build
 ninja -C build install
 
-cd src/gstreamer
-meson build
-ninja -C build
-ninja -C build install
+# going to try these on the PI
+#cd src/gstreamer
+#meson build
+#ninja -C build
+#ninja -C build install
