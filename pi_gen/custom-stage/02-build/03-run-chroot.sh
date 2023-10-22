@@ -13,7 +13,7 @@ file_name=$(basename "$url")
 wget "$url" -O "$temp_dir/$file_name"
 
 # Extract the mediamtx binary
-tar -xzf "$temp_dir/$file_name" -C "$temp_dir" --strip-components=1 mediamtx
+tar -xzf "$temp_dir/$file_name" -C "$temp_dir" 
 
 # Move the mediamtx binary to /usr/local/bin/
 mv "$temp_dir/mediamtx" /usr/local/bin/
@@ -22,4 +22,4 @@ mv "$temp_dir/mediamtx" /usr/local/bin/
 chmod +x /usr/local/bin/mediamtx
 
 # Clean up the temporary directory
-rm -r "$temp_dir"
+#rm -r "$temp_dir"
