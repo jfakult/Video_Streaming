@@ -1,7 +1,9 @@
 <template>
   <q-page class="video-container">
+    <div class="video-wrapper" ref="videoWrapper">
     <video
-      id="my-video"
+      ref="video"
+      id="video"
       class="video-js fullscreen-video"
       controls="false"
       autoplay
@@ -11,6 +13,7 @@
       <source src="video/sample-5s.mp4" type="video/mp4">
       Your browser does not support the video tag.
     </video>
+    </div>
 
     <q-btn round dense flat class="top-right" :ripple="false">
       <q-icon name="battery_full" size="lg" color="white" />
@@ -42,8 +45,15 @@ export default {
   setup() {
     const joystickContainer = ref(null);
     const showPreemptButton = ref(false);
+
+    const videoWrapper = ref(null);
+    const video = ref(null);
     let joystick;
     let websocket;
+    let scale = 1;
+    let posX = 0;
+    let posY = 0;
+    let lastTouchEnd = 0;
 
     function setupWebSocket()
     {
@@ -113,7 +123,7 @@ export default {
     }
 
     onMounted(() => {
-      setupWebSocket();
+      //setupWebSocket();
 
       joystick = nipplejs.create({
         zone: joystickContainer.value,
@@ -134,6 +144,109 @@ export default {
           }));
         }
       });
+
+      videoWrapper.value.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        
+        const rect = video.value.getBoundingClientRect();
+        const offsetX = e.clientX - rect.left - (rect.width / 2);
+        const offsetY = e.clientY - rect.top - (rect.height / 2);
+        
+        const oldScale = scale;
+        scale += e.deltaY * -0.01;
+        scale = Math.min(Math.max(1, scale), 3); // clamp the zoom level between 1 and 3
+        
+        // Adjust translations based on the mouse position
+        //posX += offsetX - offsetX * (oldScale / scale);
+        //posY += offsetY - offsetY * (oldScale / scale);
+
+        updateTransform();
+      });
+
+      let startX = 0;
+      let startY = 0;
+
+      videoWrapper.value.addEventListener('mousedown', (e) => {
+        startX = e.pageX - posX;
+        startY = e.pageY - posY;
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', () => {
+          document.removeEventListener('mousemove', onMove);
+        });
+      });
+
+      videoWrapper.value.addEventListener('touchstart', (e) => {
+        if (e.touches.length > 1) {
+          e.preventDefault();
+        }
+        startX = e.touches[0].pageX - posX;
+        startY = e.touches[0].pageY - posY;
+      });
+
+      videoWrapper.value.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        posX = e.touches[0].pageX - startX;
+        posY = e.touches[0].pageY - startY;
+        updateTransform();
+      });
+
+      videoWrapper.value.addEventListener('touchend', (e) => {
+        if (e.timeStamp - lastTouchEnd <= 300) {
+          e.preventDefault();
+        }
+        lastTouchEnd = e.timeStamp;
+      });
+
+      function onMove(e) {
+        e.preventDefault();
+        posX = e.pageX - startX;
+        posY = e.pageY - startY;
+        updateTransform();
+      }
+
+      function updateTransform() {
+        const vidDims = videoDimensions(video.value)
+        const videoWidth = vidDims.width* scale;
+        const videoHeight = vidDims.height * scale;
+        const containerWidth = videoWrapper.value.clientWidth;
+        const containerHeight = videoWrapper.value.clientHeight;
+        
+        const maxX = 0;
+        const minX = containerWidth - videoWidth
+        const maxY = 0;
+        const minY = containerHeight - videoHeight
+
+        console.log(posX, minX, maxX)
+        
+        // Clamp the values to keep video within the bounds of the container
+        posX = clamp(posX, minX, maxX);
+        posY = clamp(posY, minY, maxY);
+
+        video.value.style.transform = `translate(${posX}px, ${posY}px) scale(${scale})`;
+      }
+
+      function clamp(value, min, max) {
+        return Math.min(Math.max(value, min), max);
+      }
+
+      // https://nathanielpaulus.wordpress.com/2016/09/04/finding-the-true-dimensions-of-an-html5-videos-active-area/
+      function videoDimensions(video) {
+        // Ratio of the video's intrisic dimensions
+        var videoRatio = video.videoWidth / parseFloat(video.videoHeight);
+        // The width and height of the video element
+        var width = video.offsetWidth, height = parseFloat(video.offsetHeight);
+        // The ratio of the element's width to its height
+        var elementRatio = width/height;
+        // If the video element is short and wide
+        if(elementRatio > videoRatio) width = height * videoRatio;
+        // It must be tall and thin, or exactly equal to the original ratio
+        else height = width / videoRatio;
+        return {
+          width: width,
+          height: height
+        };
+    }
+
     });
 
     function requestControl() {
@@ -153,6 +266,8 @@ export default {
       showPreemptButton,
       requestControl,
       requestPreempt,
+      videoWrapper,
+      video
     };
   },
 };
@@ -162,22 +277,23 @@ export default {
 .video-container {
   position: relative;
   width: 100%;
-  height: 100vh;
+  height: 100%;
   overflow: hidden;
+}
+
+.video-wrapper {
+  width: 100vw;
+  height: 100vh;
 }
 
 .fullscreen-video {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  min-width: 100%;
-  min-height: 100%;
-  width: auto;
-  height: auto;
+  width: 100vw;
   z-index: -100;
   background: no-repeat;
   background-size: cover;
+  transform-origin: top left;
+  transition: transform 0.2s ease;
 }
 
 
