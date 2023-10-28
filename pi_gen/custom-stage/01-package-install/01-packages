@@ -7,6 +7,7 @@ cmake
 dbus-user-session
 dconf-gsettings-backend
 dconf-service
+dnsmasq
 ffmpeg
 fontconfig
 gir1.2-glib-2.0
@@ -24,6 +25,7 @@ gstreamer1.0-tools
 gstreamer1.0-x
 gtk-update-icon-cache
 hicolor-icon-theme
+hostapd
 libaa1
 libaacs0
 libarchive13
@@ -274,6 +276,7 @@ mesa-vdpau-drivers
 mesa-vulkan-drivers
 meson
 nettle-dev
+nginx
 perl
 perlapi-5.32.0
 pkg-config
@@ -286,6 +289,7 @@ python3-ply
 python3-pip
 python3-setuptools
 python3-talloc
+python3-websockets
 python3-yaml
 python3.9-dev
 qt5-qmake
