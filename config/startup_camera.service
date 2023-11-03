@@ -3,7 +3,7 @@ Description=Load up all the necessary startup scripts for the camera streaming t
 After=multi-user.target
 
 [Service]
-ExecStart=/usr/bin/bash /home/jfaku/Video_Streaming/scripts/startup.sh
+ExecStart=/usr/bin/bash /home/pi/Video_Streaming/scripts/startup.sh
 User=root
 
 [Install]
