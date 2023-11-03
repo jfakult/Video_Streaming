@@ -13,8 +13,12 @@ cp $BASE/config/20_interface_wifi.conf /etc/network/interfaces.d/
 
 ./$BASE/scripts/enable_hotspot.sh
 
+cd $BASE/stream_frontend
+mkdir -p /usr/share/nginx
+
 systemctl daemon-reload && \
 systemctl enable startup_camera.service && \
 systemctl enable nginx && \
 systemctl enable dnsmasq && \
 systemctl enable hostapd && \
+./build.sh
