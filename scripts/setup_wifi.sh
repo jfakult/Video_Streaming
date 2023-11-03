@@ -2,7 +2,7 @@
 
 echo "Enter credentials to connect to a local WiFi network"
 
-BASE="~/VideoStreaming/"
+BASE="/home/pi/Video_Streaming/"
 
 # Prompt for SSID and password
 read -p "Enter SSID: " SSID
