@@ -20,5 +20,6 @@ systemctl daemon-reload && \
 systemctl enable startup_camera.service && \
 systemctl enable nginx && \
 systemctl enable dnsmasq && \
+systemctl unmask hostapd && \
 systemctl enable hostapd && \
 ./build.sh
