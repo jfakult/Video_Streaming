@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BASE="/home/pi/Video_Streaming/"
+BASE="/home/pi/Video_Streaming"
 
 cp $BASE/config/dhcpcd_wifi.conf /etc/dhcpcd
 rm /etc/network/interfaces.d/10_interface_hotspot.conf

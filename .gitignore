@@ -1,4 +1,7 @@
+package-lock.json
+
 # VSCode
+*vscode*
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
@@ -22,7 +25,6 @@ node_modules/
 creds.js
 
 # Private Files
-*.json
 *.csv
 *.csv.gz
 *.tsv

@@ -3,6 +3,6 @@
 #cp /etc/nginx/nginx.conf ..
 #cp /etc/dnsmasq.conf ..
 
-npx quasar build && \
+npm run build && \
 cp -r dist/spa/* /usr/share/nginx/html/stream/
 
