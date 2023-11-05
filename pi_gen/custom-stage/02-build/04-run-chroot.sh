@@ -16,7 +16,12 @@ chown -R pi:pi /usr/share/nginx/html
 echo "04-chroot - DOWNLOADING GIT REPO"
 cd /home/pi
 
-git clone git@github.com:jfakult/Video_Streaming.git
+# Clone with https to avoid fingerprint authorization
+# Alternatively, we can insecurely run:
+# ssh-keygen -F github.com || ssh-keyscan github.com >>~/.ssh/known_hosts
+#git clone git@github.com:jfakult/Video_Streaming.git
+
+git clone https://github.com/jfakult/Video_Streaming.git
 chown -R pi:pi Video_Streaming
 
 echo "04-chroot - INSTALLING FRONTEND DEPENDENCIES"
