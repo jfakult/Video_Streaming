@@ -1,4 +1,4 @@
-# Stream Frontend (stream-frontend)
+# Quasar App (stream-frontend)
 
 A Quasar Project
 

@@ -24,9 +24,6 @@
     </q-btn>
 
     <div>
-      <!-- Joystick Container -->
-      <div ref="joystickContainer" class="bottom-left" style="width: 200px; height: 200px;"></div>
-
       <!-- Preempt Button -->
       <q-btn v-if="showPreemptButton" color="primary" text-color="white" label="Preempt" @click="requestPreempt" style="position: absolute; bottom: 20px; left: 20px;" />
   </div>
@@ -36,19 +33,16 @@
 <script>
 //import videojs from 'video.js';
 //import 'video.js/dist/video-js.css';
-import nipplejs from 'nipplejs';
 import { ref, onMounted } from 'vue';
 import { Dialog } from 'quasar';
 
 export default {
   name: 'PageIndex',
   setup() {
-    const joystickContainer = ref(null);
     const showPreemptButton = ref(false);
 
     const videoWrapper = ref(null);
     const video = ref(null);
-    let joystick;
     let websocket;
     let scale = 1;
     let posX = 0;
@@ -123,27 +117,7 @@ export default {
     }
 
     onMounted(() => {
-      //setupWebSocket();
-
-      joystick = nipplejs.create({
-        zone: joystickContainer.value,
-        mode: 'static',
-        position: { left: '50%', top: '50%' },
-        size: 150,
-        color: "red"
-      });
-
-      joystick.on('move', (evt, data) => {
-        if (websocket.readyState === WebSocket.OPEN) {
-          const left_right = data.distance * Math.cos(data.angle.radian);
-          const up_down = data.distance * Math.sin(data.angle.radian);
-          websocket.send(JSON.stringify({
-            msg_type: "POSITION",
-            left_right,
-            up_down
-          }));
-        }
-      });
+      setupWebSocket();
 
       videoWrapper.value.addEventListener('wheel', (e) => {
         e.preventDefault();
@@ -262,7 +236,6 @@ export default {
     }
 
     return {
-      joystickContainer,
       showPreemptButton,
       requestControl,
       requestPreempt,

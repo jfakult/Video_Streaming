@@ -2,7 +2,7 @@
 
 echo "Enter credentials to connect to a local WiFi network"
 
-BASE="/home/pi/Video_Streaming/"
+BASE="/home/pi/Video_Streaming"
 
 # Prompt for SSID and password
 read -p "Enter SSID: " SSID
@@ -19,7 +19,7 @@ read -p "Enter Password: " PASSWORD
     echo "}"
 } >> /etc/wpa_supplicant/wpa_supplicant.conf
 
-./$BASE/scripts/disable_hotspot.sh
+$BASE/scripts/disable_hotspot.sh
 
 # Provide feedback to the user
 echo "WiFi settings saved. You might want to restart your network or device for changes to take effect."

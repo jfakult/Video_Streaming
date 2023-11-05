@@ -4,6 +4,7 @@ autoconf
 automake
 ca-certificates
 cmake
+curl
 dbus-user-session
 dconf-gsettings-backend
 dconf-service
@@ -16,6 +17,7 @@ gir1.2-gstreamer-1.0
 git
 glib-networking
 glib-networking-services
+gnupg
 gsettings-desktop-schemas
 gstreamer1.0-gl
 gstreamer1.0-plugins-bad
