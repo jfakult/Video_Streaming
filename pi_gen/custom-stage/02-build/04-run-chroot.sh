@@ -10,7 +10,7 @@ sudo apt-get update
 sudo apt-get install nodejs -y
 
 # Prepare necessary nginx folders
-mkdir -p /usr/share/nginx/html
+mkdir -p /usr/share/nginx/html/stream
 chown -R pi:pi /usr/share/nginx/html
 
 echo "04-chroot - DOWNLOADING GIT REPO"
