@@ -24,4 +24,4 @@ systemctl enable startup_camera.service && \
 systemctl enable nginx && \
 systemctl enable dnsmasq && \
 systemctl unmask hostapd && \
-systemctl enable hostapd && \
+systemctl enable hostapd
