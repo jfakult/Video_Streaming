@@ -8,6 +8,8 @@ rm /etc/network/interfaces.d/10_interface_hotspot.conf
 rm /etc/hostapd.conf
 rm /etc/default/hostapd.conf
 
-cp $BASE/config/wpa_suppicant_default.conf /etc/wpa_supplicant/wpa_supplicant.conf
+systemctl enable wpa_supplicant
+
+cp $BASE/config/wpa_supplicant_default.conf /etc/wpa_supplicant/wpa_supplicant.conf
 
 systemctl stop hostapd
