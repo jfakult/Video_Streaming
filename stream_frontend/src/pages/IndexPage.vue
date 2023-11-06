@@ -2,7 +2,7 @@
   <q-page class="video-container">
 
     <div class="video-wrapper" ref="videoWrapper">
-      <video
+      <!--<video
         ref="video"
         id="video"
         class="video-js fullscreen-video"
@@ -14,6 +14,8 @@
         <source src="video/sample-5s.mp4" type="video/mp4">
         Your browser does not support the video tag.
       </video>
+    -->
+      <CameraStream />
     </div>
 
     <!--
@@ -34,6 +36,7 @@
            @click.prevent>
       <q-fab-action color="color-sunset-1" @click="takeScreenShot" icon="photo_camera" class="fab-button"/>
       <q-fab-action :color="isRecording ? recordingBlinker : 'color-sunset-2'" @click.prevent="toggleRecording" :icon="isRecording ? 'stop_circle' : 'videocam'" class="fab-button"/>
+      <q-fab-action color="color-sunset-2" @click="toggleStreamMode" :icon="isStreaming ? 'preview' : 'smart_display'" class="fab-button"/>
       <q-fab v-model="qualityControl"
              label=""
              color="color-sunset-4"
@@ -78,9 +81,15 @@
 //import 'video.js/dist/video-js.css';
 import { ref, onMounted } from 'vue';
 import { useQuasar } from 'quasar';
+import CameraStream from '../components/CameraStream.vue';
 
 export default {
   name: 'PageIndex',
+
+  components: {
+    CameraStream,
+  },
+
   setup() {
     const $q = useQuasar()
 
@@ -92,6 +101,7 @@ export default {
     const qualityControlIcon = ref("speed");
     const isRecording = ref(false);
     const recordingBlinker = ref("red")
+    const isStreaming = ref(true);
 
     let mediaRecorder;
     let recordedBlob;
@@ -209,6 +219,28 @@ export default {
       }
     }
 
+    function toggleStreamMode(event)
+    {
+      isStreaming.value = !isStreaming.value;
+
+      event.stopPropagation();
+      event.preventDefault();
+      settings.value = true
+
+      if (websocket && websocket.readyState === WebSocket.OPEN)
+      {
+        websocket.send(JSON.stringify({ msg_type: "stream_mode", data: isStreaming.value ? "wifi" : "screen" }));
+      }
+      else
+      {
+        $q.notify({
+          type: 'negative',
+          position: 'top',
+          message: 'Failed to reach the Camera. Try waiting or refresh the screen.'
+        })
+      }
+    }
+
     function setQuality(quality)
     {
       if (websocket && websocket.readyState === WebSocket.OPEN)
@@ -288,12 +320,13 @@ export default {
       qualityControlIcon,
       isRecording,
       recordingBlinker,
+      isStreaming,
 
       // Functions
       takeScreenShot,
       toggleRecording,
       setQuality,
-
+      toggleStreamMode,
     };
   },
 };
