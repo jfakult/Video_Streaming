@@ -1,32 +1,75 @@
 <template>
   <q-page class="video-container">
+
     <div class="video-wrapper" ref="videoWrapper">
-    <video
-      ref="video"
-      id="video"
-      class="video-js fullscreen-video"
-      controls="false"
-      autoplay
-      loop
-      muted
-    >
-      <source src="video/sample-5s.mp4" type="video/mp4">
-      Your browser does not support the video tag.
-    </video>
+      <video
+        ref="video"
+        id="video"
+        class="video-js fullscreen-video"
+        controls="false"
+        autoplay
+        loop
+        muted
+      >
+        <source src="video/sample-5s.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+      </video>
     </div>
 
+    <!--
     <q-btn round dense flat class="top-right" :ripple="false">
       <q-icon name="battery_full" size="lg" color="white" />
     </q-btn>
+    -->
 
-    <q-btn round dense flat class="bottom-right" :ripple="false">
-      <q-icon name="photo_camera" size="lg" color="white" />
-    </q-btn>
+    <q-fab class="absolute bottom-right fab-button fab-button-big"
+           v-model="settings"
+           label=""
+           vertical-actions-align="right"
+           color="color-dark-green"
+           icon="settings"
+           direction="up"
+           persistent
+           @click.stop
+           @click.prevent>
+      <q-fab-action color="color-sunset-1" @click="takeScreenShot" icon="photo_camera" class="fab-button"/>
+      <q-fab-action :color="isRecording ? recordingBlinker : 'color-sunset-2'" @click.prevent="toggleRecording" :icon="isRecording ? 'stop_circle' : 'videocam'" class="fab-button"/>
+      <q-fab v-model="qualityControl"
+             label=""
+             color="color-sunset-4"
+             :icon="qualityControlIcon"
+             direction="left"
+             class="fab-button-inside"
+             persistent>
+            <q-fab-action color="color-sunset-4" @click="setQuality('low')" icon="cell_tower" label="Better Reliability"/>
+            <q-fab-action color="color-sunset-4" @click="setQuality('high')" icon="speed" label="Better Quality"/>
+      </q-fab>
+      <!--<q-fab-action color="info" class="fab-button" @click="toggleHelp" icon="help" />-->
+      <q-btn color="info" icon="help" class="fab-button">
+        <q-popup-proxy>
+          <q-banner>
+            <template v-slot:avatar>
+              <q-icon name="help" color="info" />
+            </template>
+            This is a help menu! But there is nothing helpful here yet...
+          </q-banner>
+        </q-popup-proxy>
+      </q-btn>
+    </q-fab>
 
-    <div>
-      <!-- Preempt Button -->
-      <q-btn v-if="showPreemptButton" color="primary" text-color="white" label="Preempt" @click="requestPreempt" style="position: absolute; bottom: 20px; left: 20px;" />
-  </div>
+    <q-inner-loading :showing="splashLoading"
+                     transition-duration="2000"
+                     transition-show="none">
+        <q-img src="icons/favicon-240x240.png" width="24vw" class="absolute" />
+
+        <q-spinner
+          color="color-sunset-1"
+          size="30vw"
+          thickness="1"
+          class="absolute"
+        />
+    </q-inner-loading>
+
   </q-page>
 </template>
 
@@ -34,20 +77,36 @@
 //import videojs from 'video.js';
 //import 'video.js/dist/video-js.css';
 import { ref, onMounted } from 'vue';
-import { Dialog } from 'quasar';
+import { useQuasar } from 'quasar';
 
 export default {
   name: 'PageIndex',
   setup() {
-    const showPreemptButton = ref(false);
+    const $q = useQuasar()
 
     const videoWrapper = ref(null);
     const video = ref(null);
+    const splashLoading = ref(true);
+    const settings = ref(null);
+    const qualityControl = ref(null);
+    const qualityControlIcon = ref("speed");
+    const isRecording = ref(false);
+    const recordingBlinker = ref("red")
+
+    let mediaRecorder;
+    let recordedBlob;
+    let recordedChunks = [];
+
+    let socketPingHandle = 0;
     let websocket;
-    let scale = 1;
-    let posX = 0;
-    let posY = 0;
-    let lastTouchEnd = 0;
+
+    setTimeout(() => {
+      splashLoading.value = false;
+    }, 2000);
+
+    setInterval(() => {
+      recordingBlinker.value = recordingBlinker.value == "red" ? "black" : "red";
+    }, 1000);
 
     function setupWebSocket()
     {
@@ -59,14 +118,13 @@ export default {
         // Acquire control when socket opens
         console.log("Websocket opened")
 
-        if (socketHandle)
+        if (socketPingHandle)
         {
-          clearInterval(socketHandle)
+          clearInterval(socketPingHandle)
         }
         // Ping pong, most browsers time out the websocket at 1 minute
-        var socketHandle = setInterval(() => { websocket.send("ping") }, 29 * 1000)
-
-        requestControl();
+        clearInterval(socketPingHandle)
+        socketPingHandle = setInterval(() => { websocket.send("ping") }, 29 * 1000)
       };
       
       websocket.onmessage = handleWebSocketMessage;
@@ -76,171 +134,166 @@ export default {
       };
 
       websocket.onclose = (event) => {
-        if (event.wasClean) {
+        if (event.wasClean)
+        {
           console.log(`Closed cleanly, code=${event.code}, reason=${event.reason}`);
-        } else {
+        }
+        else
+        {
           console.error('Connection died');
         }
         
         // Attempt to reconnect after a delay
         setTimeout(() => {
           setupWebSocket();
-        }, 10000); // Wait for 1 second before reconnecting
+        }, 1000); // Wait for 1 second before attempting to reconnect
       };
     }
 
-    function handleWebSocketMessage(event) {
-      const data = JSON.parse(event.data);
-
-      if (data.action === "PREEMPT_REQUEST") {
-        Dialog.create({
-          title: 'Preemption Request',
-          message: 'Someone wants to take control. Do you allow?',
-          ok: {
-            label: 'Yes',
-            color: 'green'
-          },
-          cancel: {
-            label: 'No',
-            color: 'red'
-          }
-        }).onOk(() => {
-          websocket.send(JSON.stringify({ response: "YES" }));
-        }).onCancel(() => {
-          websocket.send(JSON.stringify({ response: "NO" }));
-        });
-      } else if (data.response === "PREEMPT_GRANTED") {
-        // Handle UI or logic when preemption is granted
-      } else if (data.response === "NO") {
-        showPreemptButton.value = true;
+    function handleWebSocketMessage(event)
+    {
+      if (event.data == "pong")
+      {
+        return;
       }
+
+      const data = JSON.parse(event.data);
+    }
+
+    function takeScreenShot(event)
+    {
+      event.stopPropagation();
+      event.preventDefault();
+      settings.value = true
+      let canvas = document.createElement('canvas');
+
+      // Set the canvas dimensions to the video dimensions
+      canvas.width = video.value.videoWidth;
+      canvas.height = video.value.videoHeight;
+
+      // Draw the video frame to the canvas
+      let ctx = canvas.getContext('2d');
+      ctx.drawImage(video.value, 0, 0, canvas.width, canvas.height);
+
+      // Convert the canvas to a data URL
+      let dataURL = canvas.toDataURL('image/png');
+
+      // Create a link element, set the download attribute with a filename
+      const date = new Date();
+      const filename = `wildstream_${new Date().toISOString().replace(/\..+/, '').replace(/:/g, '-').replace(/T/, ':')}.png`;
+      let link = document.createElement('a');
+      link.href = dataURL;
+      link.download = filename;
+
+      // Append the link to the body, click it, and remove it
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function toggleRecording(event)
+    {
+      isRecording.value = !isRecording.value;
+
+      event.stopPropagation();
+      event.preventDefault();
+      settings.value = true
+
+      if (isRecording.value)
+      {
+        startRecording()
+      }
+      else
+      {
+        mediaRecorder.stop()
+      }
+    }
+
+    function setQuality(quality)
+    {
+      if (websocket && websocket.readyState === WebSocket.OPEN)
+      {
+        websocket.send(JSON.stringify({ msg_type: "quality", data: "low" }));
+
+        if (quality == "low")
+        {
+          qualityControlIcon.value = "cell_tower";
+        }
+        else
+        {
+          qualityControlIcon.value = "speed";
+        }
+      }
+      else
+      {
+        $q.notify({
+          type: 'negative',
+          position: 'top',
+          message: 'Failed to reach the Camera. Try waiting or refresh the screen.'
+        })
+      }
+    }
+
+    function startRecording()
+    {
+      const options = { mimeType: "video/webm; codecs=vp9" };
+      const stream = video.value.captureStream(); // This captures the stream from the video element
+      mediaRecorder = new MediaRecorder(stream, options);
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          recordedChunks.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = () => {
+        recordedBlob = new Blob(recordedChunks, {
+          type: "video/webm",
+        });
+        recordedChunks = []; // Clear the recorded chunks
+        downloadVideo();
+      };
+
+      mediaRecorder.start();
+    }
+
+    function downloadVideo()
+    {
+      mediaRecorder.stop()
+      const url = URL.createObjectURL(recordedBlob);
+      const a = document.createElement("a");
+      document.body.appendChild(a);
+      a.style = "display: none";
+      a.href = url;
+      const filename = `wildstream_${new Date().toISOString().replace(/\..+/, '').replace(/:/g, '-').replace(/T/, ':')}.webm`;
+      a.download = filename;
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
     }
 
     onMounted(() => {
       setupWebSocket();
-
-      videoWrapper.value.addEventListener('wheel', (e) => {
-        e.preventDefault();
-        
-        const rect = video.value.getBoundingClientRect();
-        const offsetX = e.clientX - rect.left - (rect.width / 2);
-        const offsetY = e.clientY - rect.top - (rect.height / 2);
-        
-        const oldScale = scale;
-        scale += e.deltaY * -0.01;
-        scale = Math.min(Math.max(1, scale), 3); // clamp the zoom level between 1 and 3
-        
-        // Adjust translations based on the mouse position
-        //posX += offsetX - offsetX * (oldScale / scale);
-        //posY += offsetY - offsetY * (oldScale / scale);
-
-        updateTransform();
-      });
-
-      let startX = 0;
-      let startY = 0;
-
-      videoWrapper.value.addEventListener('mousedown', (e) => {
-        startX = e.pageX - posX;
-        startY = e.pageY - posY;
-        document.addEventListener('mousemove', onMove);
-        document.addEventListener('mouseup', () => {
-          document.removeEventListener('mousemove', onMove);
-        });
-      });
-
-      videoWrapper.value.addEventListener('touchstart', (e) => {
-        if (e.touches.length > 1) {
-          e.preventDefault();
-        }
-        startX = e.touches[0].pageX - posX;
-        startY = e.touches[0].pageY - posY;
-      });
-
-      videoWrapper.value.addEventListener('touchmove', (e) => {
-        e.preventDefault();
-        posX = e.touches[0].pageX - startX;
-        posY = e.touches[0].pageY - startY;
-        updateTransform();
-      });
-
-      videoWrapper.value.addEventListener('touchend', (e) => {
-        if (e.timeStamp - lastTouchEnd <= 300) {
-          e.preventDefault();
-        }
-        lastTouchEnd = e.timeStamp;
-      });
-
-      function onMove(e) {
-        e.preventDefault();
-        posX = e.pageX - startX;
-        posY = e.pageY - startY;
-        updateTransform();
-      }
-
-      function updateTransform() {
-        const vidDims = videoDimensions(video.value)
-        const videoWidth = vidDims.width* scale;
-        const videoHeight = vidDims.height * scale;
-        const containerWidth = videoWrapper.value.clientWidth;
-        const containerHeight = videoWrapper.value.clientHeight;
-        
-        const maxX = 0;
-        const minX = containerWidth - videoWidth
-        const maxY = 0;
-        const minY = containerHeight - videoHeight
-
-        console.log(posX, minX, maxX)
-        
-        // Clamp the values to keep video within the bounds of the container
-        posX = clamp(posX, minX, maxX);
-        posY = clamp(posY, minY, maxY);
-
-        video.value.style.transform = `translate(${posX}px, ${posY}px) scale(${scale})`;
-      }
-
-      function clamp(value, min, max) {
-        return Math.min(Math.max(value, min), max);
-      }
-
-      // https://nathanielpaulus.wordpress.com/2016/09/04/finding-the-true-dimensions-of-an-html5-videos-active-area/
-      function videoDimensions(video) {
-        // Ratio of the video's intrisic dimensions
-        var videoRatio = video.videoWidth / parseFloat(video.videoHeight);
-        // The width and height of the video element
-        var width = video.offsetWidth, height = parseFloat(video.offsetHeight);
-        // The ratio of the element's width to its height
-        var elementRatio = width/height;
-        // If the video element is short and wide
-        if(elementRatio > videoRatio) width = height * videoRatio;
-        // It must be tall and thin, or exactly equal to the original ratio
-        else height = width / videoRatio;
-        return {
-          width: width,
-          height: height
-        };
-    }
-
     });
 
-    function requestControl() {
-      if (websocket.readyState === WebSocket.OPEN) {
-        websocket.send(JSON.stringify({ msg_type: "REQUEST_CONTROL" }));
-      }
-    }
-
-    function requestPreempt() {
-      if (websocket.readyState === WebSocket.OPEN) {
-        websocket.send(JSON.stringify({ msg_type: "REQUEST_PREEMPT" }));
-      }
-    }
-
     return {
-      showPreemptButton,
-      requestControl,
-      requestPreempt,
+      // Element References
       videoWrapper,
-      video
+      video,
+      settings,
+      qualityControl,
+
+      // Variables
+      splashLoading,
+      qualityControlIcon,
+      isRecording,
+      recordingBlinker,
+
+      // Functions
+      takeScreenShot,
+      toggleRecording,
+      setQuality,
+
     };
   },
 };
@@ -269,29 +322,53 @@ export default {
   transition: transform 0.2s ease;
 }
 
-
-.top-right, .bottom-right {
-  position: absolute;
-  z-index: 100;
-  background: rgba(0, 0, 0, 0.5); /* Semi-transparent black background */
-  border-radius: 25%;  /* Keeps the background round */
-  padding: 5px;  /* Spacing around the icon */
-}
-
-.top-right {
-  top: 10px;
-  right: 10px;
-}
-
 .bottom-right {
-  bottom: 10px;
-  right: 10px;
+  bottom: 5vh;
+  right: 5vh;
 }
 
-.bottom-left {
-  bottom: 10px;
-  left: 10px;
-  z-index: 100;
-  position: absolute;
+.q-inner-loading {
+  background-color: var(--q-color-dark-background);
+}
+
+.fab-button, .fab-button-inside {
+  width: 4vw;
+  height: 4vw;
+}
+div.fab-button-big {
+  width: 5vw;
+  height: 5vw;
+}
+:deep(.fab-button-big > a) {
+  border-radius: 5vw;
+}
+:deep(.fab-button-inside > a) {
+  border-radius: 4vw;
+}
+
+:deep(div.q-fab--form-rounded, .fab-button, .fab-button-big) {
+  margin: 0;
+}
+button.fab-button {
+  margin: 0;
+  border-radius: 100%;
+}
+:deep(.q-fab__actions) {
+  margin: 0;
+}
+div.fab-button-inside, :deep(.q-fab__actions--opened>a.q-fab--form-rounded) {
+  margin: 0;
+  margin-top: 2vh;
+  margin-left: 1vw;
+  border-radius: 5vw;
+}
+:deep(div.q-fab__actions--opened) {
+  margin-bottom: 3vh !important;
+}
+:deep(div.fab-button-inside > .q-fab__actions--opened) {
+  margin-right: 1vw !important;
+}
+:deep(.fab-button-inside > a) {
+  margin: 0;
 }
 </style>

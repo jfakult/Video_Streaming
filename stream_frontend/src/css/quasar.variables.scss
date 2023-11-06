@@ -12,6 +12,52 @@
 // to match your app's branding.
 // Tip: Use the "Theme Builder" on Quasar's documentation website.
 
+:root {
+    --q-color-sunset-1: #FC9C87;
+    --q-color-sunset-2: #BB728B;
+    --q-color-sunset-3: #64E4E9;
+    --q-color-sunset-4: #4BA6B1;
+    --q-color-dark-background: #0C333D;
+    --q-color-dark-green: #33924d;
+}
+
+.bg-color-sunset-1 {
+    background-color: var(--q-color-sunset-1);
+}
+.text-color-sunset-1 {
+    color: var(--q-color-sunset-1);
+}
+.bg-color-sunset-2 {
+    background-color: var(--q-color-sunset-2);
+}
+.text-color-sunset-2 {
+    color: var(--q-color-sunset-2);
+}
+.bg-color-sunset-3 {
+    background-color: var(--q-color-sunset-3);
+}
+.text-color-sunset-3 {
+    color: var(--q-color-sunset-3);
+}
+.bg-color-sunset-4 {
+    background-color: var(--q-color-sunset-4);
+}
+.text-color-sunset-4 {
+    color: var(--q-color-sunset-4);
+}
+.bg-color-dark-background {
+    background-color: var(--q-color-dark-background);
+}
+.text-color-dark-background {
+    color: var(--q-color-dark-background);
+}
+.bg-color-dark-green {
+    background-color: var(--q-color-dark-green);
+}
+.text-color-dark-green {
+    color: var(--q-color-dark-green);
+}
+
 $primary   : #1976D2;
 $secondary : #26A69A;
 $accent    : #9C27B0;
