@@ -1,21 +1,10 @@
 <template>
   <q-page class="video-container">
 
+    <div class="backdrop"></div>
+
     <div class="video-wrapper" ref="videoWrapper">
-      <!--<video
-        ref="video"
-        id="video"
-        class="video-js fullscreen-video"
-        controls="false"
-        autoplay
-        loop
-        muted
-      >
-        <source src="video/sample-5s.mp4" type="video/mp4">
-        Your browser does not support the video tag.
-      </video>
-    -->
-      <CameraStream />
+      <CameraStream ref="video" :onplay="videoOnPlay" :onpause="videoOnPause" />
     </div>
 
     <!--
@@ -36,7 +25,7 @@
            @click.prevent>
       <q-fab-action color="color-sunset-1" @click="takeScreenShot" icon="photo_camera" class="fab-button"/>
       <q-fab-action :color="isRecording ? recordingBlinker : 'color-sunset-2'" @click.prevent="toggleRecording" :icon="isRecording ? 'stop_circle' : 'videocam'" class="fab-button"/>
-      <q-fab-action color="color-sunset-2" @click="toggleStreamMode" :icon="isStreaming ? 'preview' : 'smart_display'" class="fab-button"/>
+      <q-fab-action color="color-sunset-2" @click="toggleStreamMode" :icon="isStreamingMode ? 'preview' : 'smart_display'" class="fab-button"/>
       <q-fab v-model="qualityControl"
              label=""
              color="color-sunset-4"
@@ -60,7 +49,7 @@
       </q-btn>
     </q-fab>
 
-    <q-inner-loading :showing="splashLoading"
+    <q-inner-loading id="splashLoading" :showing="splashLoading"
                      transition-duration="2000"
                      transition-show="none">
         <q-img src="icons/favicon-240x240.png" width="24vw" class="absolute" />
@@ -72,6 +61,36 @@
           class="absolute"
         />
     </q-inner-loading>
+
+    <q-inner-loading id="streamLoading" :style="isStreamLoading ? '' : 'display: none'"
+                     transition-duration="2000"
+                     transition-show="none">
+
+        <q-spinner
+          color="color-sunset-1"
+          size="30vw"
+          thickness="1"
+          class="absolute"
+        />
+    </q-inner-loading>
+
+    <q-inner-loading id="screenMode" :style="isStreamingMode ? 'display: none' : ''"
+                     transition-duration="2000"
+                     transition-show="none">
+        <q-img src="icons/favicon-240x240.png" width="24vw" class="absolute" />
+
+        <q-spinner
+          size="0vw"
+          thickness="0"
+          class="absolute"
+        />
+    </q-inner-loading>
+
+    <div ref="recording-indicator" :class="recordingBlinker == 'red' ? 'recording-indicator' : 'recording-indicator dark-border'" :style="isRecording ? '' : 'display: none'"></div>
+
+    <!--
+    <q-img src="icons/favicon-240x240.png" width="24vw" class="stream-down-indicator" :style="isStreamLoading ? 'display: none' : ''" />
+    -->
 
   </q-page>
 </template>
@@ -101,7 +120,11 @@ export default {
     const qualityControlIcon = ref("speed");
     const isRecording = ref(false);
     const recordingBlinker = ref("red")
-    const isStreaming = ref(true);
+    const recordingIndicator = ref(null);
+    const isStreamingMode = ref(true);
+    const isStreamLoading = ref(false)
+
+    let lastVidTime = 0;
 
     let mediaRecorder;
     let recordedBlob;
@@ -178,12 +201,12 @@ export default {
       let canvas = document.createElement('canvas');
 
       // Set the canvas dimensions to the video dimensions
-      canvas.width = video.value.videoWidth;
-      canvas.height = video.value.videoHeight;
+      canvas.width = video.value.getVideoElem().videoWidth;
+      canvas.height = video.value.getVideoElem().videoHeight;
 
       // Draw the video frame to the canvas
       let ctx = canvas.getContext('2d');
-      ctx.drawImage(video.value, 0, 0, canvas.width, canvas.height);
+      ctx.drawImage(video.value.getVideoElem(), 0, 0, canvas.width, canvas.height);
 
       // Convert the canvas to a data URL
       let dataURL = canvas.toDataURL('image/png');
@@ -221,7 +244,7 @@ export default {
 
     function toggleStreamMode(event)
     {
-      isStreaming.value = !isStreaming.value;
+      isStreamingMode.value = !isStreamingMode.value;
 
       event.stopPropagation();
       event.preventDefault();
@@ -229,7 +252,7 @@ export default {
 
       if (websocket && websocket.readyState === WebSocket.OPEN)
       {
-        websocket.send(JSON.stringify({ msg_type: "stream_mode", data: isStreaming.value ? "wifi" : "screen" }));
+        websocket.send(JSON.stringify({ msg_type: "stream_mode", data: isStreamingMode.value ? "wifi" : "screen" }));
       }
       else
       {
@@ -269,7 +292,8 @@ export default {
     function startRecording()
     {
       const options = { mimeType: "video/webm; codecs=vp9" };
-      const stream = video.value.captureStream(); // This captures the stream from the video element
+      console.log(video.value.getVideoElem())
+      const stream = video.value.getVideoElem().captureStream(); // This captures the stream from the video element
       mediaRecorder = new MediaRecorder(stream, options);
 
       mediaRecorder.ondataavailable = (event) => {
@@ -304,8 +328,39 @@ export default {
       document.body.removeChild(a);
     }
 
+    function videoOnPlay() {
+      console.log("Video playing")
+    }
+    function videoOnPause() {
+      console.log("Video paused")
+    }
+
+    function monitorStreamStatus()
+    {
+      const vidRef = video.value.getVideoElem();
+      if (!vidRef)
+      {
+        return;
+      }
+
+      const vidTime = vidRef.currentTime;
+
+      console.log(vidTime)
+      if (vidTime > lastVidTime)
+      {
+        isStreamLoading.value = false;
+      }
+      else
+      {
+        isStreamLoading.value = true;
+      }
+      lastVidTime = vidTime;
+    }
+
     onMounted(() => {
-      setupWebSocket();
+      //setupWebSocket();
+
+      setInterval(monitorStreamStatus, 500)
     });
 
     return {
@@ -314,25 +369,53 @@ export default {
       video,
       settings,
       qualityControl,
+      recordingIndicator,
 
       // Variables
       splashLoading,
       qualityControlIcon,
       isRecording,
       recordingBlinker,
-      isStreaming,
+      isStreamingMode,
 
       // Functions
       takeScreenShot,
       toggleRecording,
       setQuality,
       toggleStreamMode,
+      videoOnPlay,
+      videoOnPause,
     };
   },
 };
 </script>
 
 <style scoped>
+
+.backdrop {
+  position: absolute;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1;
+  background: var(--q-color-dark-background);
+}
+
+.recording-indicator {
+  /* pulse red border */
+  position: absolute;
+  width: 100vw;
+  height: 100vh;
+  top: 0;
+  left: 0;
+  z-index: 100;
+  border: 4px solid red;
+  border-radius: 4px;
+}
+
+.dark-border {
+  border: 4px solid var(--q-color-sunset-2);
+}
+
 .video-container {
   position: relative;
   width: 100%;
