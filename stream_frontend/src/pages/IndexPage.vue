@@ -88,9 +88,7 @@
 
     <div ref="recording-indicator" :class="recordingBlinker == 'red' ? 'recording-indicator' : 'recording-indicator dark-border'" :style="isRecording ? '' : 'display: none'"></div>
 
-    <!--
-    <q-img src="icons/favicon-240x240.png" width="24vw" class="stream-down-indicator" :style="isStreamLoading ? 'display: none' : ''" />
-    -->
+    <q-icon class="stream-down-indicator" color="red" :style="isStreamLoading ? '' : display: none;'" :icon="isStreamLoading && streamLoadingBlinker ? 'wifi' : 'wifi_off'" />
 
   </q-page>
 </template>
@@ -123,6 +121,7 @@ export default {
     const recordingIndicator = ref(null);
     const isStreamingMode = ref(true);
     const isStreamLoading = ref(false)
+    const streamLoadingBlinker = ref(false)
 
     let lastVidTime = 0;
 
@@ -133,12 +132,16 @@ export default {
     let socketPingHandle = 0;
     let websocket;
 
+    /*
+    // This should be handled by monitorStreamStatus()
     setTimeout(() => {
       splashLoading.value = false;
     }, 2000);
+    */
 
     setInterval(() => {
       recordingBlinker.value = recordingBlinker.value == "red" ? "black" : "red";
+      streamLoadingBlinker.value = !streamLoadingBlinker.value
     }, 1000);
 
     function setupWebSocket()
@@ -377,6 +380,7 @@ export default {
       isRecording,
       recordingBlinker,
       isStreamingMode,
+      streamLoadingBlinker,
 
       // Functions
       takeScreenShot,
