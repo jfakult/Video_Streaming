@@ -1,23 +1,33 @@
 <template>
     <div id="camera-stream-container">
-      <video ref="videoElement" id="video" autoplay playsinline></video>
+      <video ref="videoElement" id="video" autoplay playsinline @onplay="onplay" @onpause="onpause"></video>
     </div>
 </template>
   
 <script>
   export default {
     name: 'CameraStream',
+
+    props: {
+        onplay: Function,
+        onpause: Function,
+    },
+
     data() {
       return {
         restartPause: 2000,
         pc: null,
         restartTimeout: null,
-        eTag: '',
+        sessionUrl: '',
         queuedCandidates: [],
         offerData: null
       };
     },
     methods: {
+      getVideoElem()
+      {
+        return this.$refs.videoElement
+      }, 
       unquoteCredential(v) {
         return JSON.parse(`"${v}"`);
       },
@@ -125,7 +135,7 @@
       
       start() {
         console.log("Requesting ICE servers");
-        const url = new URL('whep', window.location.href + "cam/") + window.location.search;
+        const url = new URL('whep', window.location.href + "cam/"); // + window.location.search;
 
         fetch(url, { method: 'OPTIONS' })
           .then(res => this.onIceServers(res))
@@ -141,20 +151,30 @@
         });
 
         const direction = "sendrecv";
+        //const direction = "recvonly"
         this.pc.addTransceiver("video", { direction });
-        this.pc.addTransceiver("audio", { direction });
+        //this.pc.addTransceiver("audio", { direction });
 
         this.pc.onicecandidate = (evt) => this.onLocalCandidate(evt);
         this.pc.oniceconnectionstatechange = () => this.onConnectionState();
 
         this.pc.ontrack = (evt) => {
           console.log("New track:", evt.track.kind);
+
+          evt.track.onended = () =>
+          {
+            this.$refs.videoElement.pause()
+          }
+
+          console.log(evt.streams)
           this.$refs.videoElement.srcObject = evt.streams[0];
+          this.$refs.videoElement.muted = true;
+          this.$refs.videoElement.play();
         };
 
         this.pc.createOffer()
           .then((offer) => this.onLocalOffer(offer))
-          .catch(err => console.error(err));
+          .catch(err => console.error("Create Offer Error:", err));
       },
 
       onLocalOffer(offer) {
@@ -164,7 +184,7 @@
         this.pc.setLocalDescription(offer);
 
         console.log("Sending offer");
-        const url = new URL('whep', window.location.href + "cam/") + window.location.search;
+        const url = new URL('whep', window.location.href + "cam/"); // + window.location.search;
 
         fetch(url, {
           method: 'POST',
@@ -177,7 +197,7 @@
           if (res.status !== 201) {
             throw new Error('Bad status code');
           }
-          this.eTag = res.headers.get('ETag');
+          this.sessionUrl = new URL(res.headers.get('location'), window.location.href).toString();
           return res.text();
         })
         .then(sdp => this.onRemoteAnswer(new RTCSessionDescription({
@@ -191,13 +211,13 @@
       },
 
       onConnectionState() {
+        console.log("Connection State Change:", this.pc.iceConnectionState)
         if (this.restartTimeout !== null) {
           return;
         }
 
-        console.log("Peer connection state:", this.pc.iceConnectionState);
-
         if (this.pc.iceConnectionState === "disconnected") {
+          console.log("Disconnected...")
           this.scheduleRestart();
         }
       },
@@ -221,7 +241,7 @@
         }
 
         if (evt.candidate) {
-          if (this.eTag === '') {
+          if (this.sessionUrl === '') {
             this.queuedCandidates.push(evt.candidate);
           } else {
             this.sendLocalCandidates([evt.candidate]);
@@ -230,13 +250,14 @@
       },
 
       sendLocalCandidates(candidates) {
-        const url = new URL('whep', window.location.href + "cam/") + window.location.search;
+        //const url = new URL('whep', window.location.href + "cam/"); // + window.location.search;
+        const url = this.sessionUrl;
 
         fetch(url, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/trickle-ice-sdpfrag',
-            'If-Match': this.eTag,
+            'If-Match': "*",
           },
           body: this.generateSdpFragment(this.offerData, candidates),
         })
@@ -246,12 +267,13 @@
           }
         })
         .catch(err => {
-          console.log('Error:', err);
+          console.log('Local Candidate Error:', err);
           this.scheduleRestart();
         });
       },
 
       scheduleRestart() {
+        console.log("Restarting... ", this.restartTimeout)
         if (this.restartTimeout !== null) {
           return;
         }
@@ -262,11 +284,25 @@
         }
 
         this.restartTimeout = setTimeout(() => {
+
           this.restartTimeout = null;
           this.start();
         }, this.restartPause);
 
-        this.eTag = '';
+        if (this.sessionUrl) {
+            fetch(this.sessionUrl, {
+                method: 'DELETE',
+            })
+                .then((res) => {
+                    if (res.status !== 200) {
+                        throw new Error('bad status code');
+                    }
+                })
+                .catch((err) => {
+                    console.log('delete session error: ' + err);
+                });
+        }
+        this.sessionUrl = '';
         this.queuedCandidates = [];
       }
     },
@@ -281,6 +317,8 @@
     },
 
     mounted() {
+      this.$refs.videoElement.onplay = this.onplay
+      this.$refs.videoElement.onpause = this.onpause
       this.start();
     },
     beforeUnmount() {
