@@ -88,7 +88,7 @@
 
     <div ref="recording-indicator" :class="recordingBlinker == 'red' ? 'recording-indicator' : 'recording-indicator dark-border'" :style="isRecording ? '' : 'display: none'"></div>
 
-    <q-icon class="stream-down-indicator" color="red" :style="isStreamLoading ? '' : display: none;'" :icon="isStreamLoading && streamLoadingBlinker ? 'wifi' : 'wifi_off'" />
+    <q-icon class="stream-down-indicator" color="red" :style="isStreamLoading ? '' : 'display: none;'" :icon="isStreamLoading && streamLoadingBlinker ? 'wifi' : 'wifi_off'" />
 
   </q-page>
 </template>
@@ -112,7 +112,7 @@ export default {
 
     const videoWrapper = ref(null);
     const video = ref(null);
-    const splashLoading = ref(true);
+    const splashLoading = ref(false); // probably don't need this anymore
     const settings = ref(null);
     const qualityControl = ref(null);
     const qualityControlIcon = ref("speed");
@@ -348,7 +348,6 @@ export default {
 
       const vidTime = vidRef.currentTime;
 
-      console.log(vidTime)
       if (vidTime > lastVidTime)
       {
         isStreamLoading.value = false;
@@ -358,6 +357,8 @@ export default {
         isStreamLoading.value = true;
       }
       lastVidTime = vidTime;
+
+      console.log(`Stream loading: ${isStreamLoading.value}`)
     }
 
     onMounted(() => {
