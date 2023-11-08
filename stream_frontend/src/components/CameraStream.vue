@@ -1,6 +1,6 @@
 <template>
     <div id="camera-stream-container">
-      <video ref="videoElement" id="video" autoplay playsinline @onplay="onplay" @onpause="onpause"></video>
+      <video ref="videoElement" id="video" autoplay playsinline muted preload="auto" @onplay="onplay" @onpause="onpause"></video>
     </div>
 </template>
   
@@ -15,7 +15,7 @@
 
     data() {
       return {
-        restartPause: 2000,
+        restartPause: 1000,
         pc: null,
         restartTimeout: null,
         sessionUrl: '',

@@ -25,7 +25,16 @@
            @click.prevent>
       <q-fab-action color="color-sunset-1" @click="takeScreenShot" icon="photo_camera" class="fab-button"/>
       <q-fab-action :color="isRecording ? recordingBlinker : 'color-sunset-2'" @click.prevent="toggleRecording" :icon="isRecording ? 'stop_circle' : 'videocam'" class="fab-button"/>
-      <q-fab-action color="color-sunset-2" @click="toggleStreamMode" :icon="isStreamingMode ? 'preview' : 'smart_display'" class="fab-button"/>
+      <q-fab v-model="streamModeControl"
+             label=""
+             color="color-sunset-4"
+             :icon="streamControlIcon"
+             direction="left"
+             class="fab-button-inside"
+             persistent>
+            <q-fab-action color="color-sunset-1" @click="toggleStreamMode('wifi')" icon="wifi" label="WiFi"/>
+            <q-fab-action color="color-sunset-1" @click="toggleStreamMode('screen')" icon="smart_display" label="Scope Screen"/>
+      </q-fab>
       <q-fab v-model="qualityControl"
              label=""
              color="color-sunset-4"
@@ -33,8 +42,8 @@
              direction="left"
              class="fab-button-inside"
              persistent>
-            <q-fab-action color="color-sunset-4" @click="setQuality('low')" icon="cell_tower" label="Better Reliability"/>
-            <q-fab-action color="color-sunset-4" @click="setQuality('high')" icon="speed" label="Better Quality"/>
+            <q-fab-action color="color-sunset-1" @click="setQuality('low')" icon="cell_tower" label="Better Reliability"/>
+            <q-fab-action color="color-sunset-1" @click="setQuality('high')" icon="speed" label="Better Quality"/>
       </q-fab>
       <!--<q-fab-action color="info" class="fab-button" @click="toggleHelp" icon="help" />-->
       <q-btn color="info" icon="help" class="fab-button">
@@ -49,46 +58,30 @@
       </q-btn>
     </q-fab>
 
-    <q-inner-loading id="splashLoading" :showing="splashLoading"
+    <q-inner-loading :showing="isStreamLoading"
                      transition-duration="2000"
                      transition-show="none">
-        <q-img src="icons/favicon-240x240.png" width="24vw" class="absolute" />
+
+        <q-img src="icons/favicon-240x240.png" width="24vw" class="absolute" :style="splashLoading ? '' : 'display: none;'" />
 
         <q-spinner
           color="color-sunset-1"
-          size="30vw"
+          :size="splashLoading ? '30vw' : '20vw'"
           thickness="1"
           class="absolute"
         />
     </q-inner-loading>
 
-    <q-inner-loading id="streamLoading" :style="isStreamLoading ? '' : 'display: none'"
-                     transition-duration="2000"
-                     transition-show="none">
-
-        <q-spinner
-          color="color-sunset-1"
-          size="30vw"
-          thickness="1"
-          class="absolute"
-        />
-    </q-inner-loading>
-
-    <q-inner-loading id="screenMode" :style="isStreamingMode ? 'display: none' : ''"
-                     transition-duration="2000"
-                     transition-show="none">
+    <q-inner-loading id="screenMode" :showing="!isStreamingMode" transition-duration="2000" transition-show="none">
         <q-img src="icons/favicon-240x240.png" width="24vw" class="absolute" />
 
-        <q-spinner
-          size="0vw"
-          thickness="0"
-          class="absolute"
-        />
+        <q-spinner size="0vw" thickness="0" class="absolute" />
     </q-inner-loading>
 
     <div ref="recording-indicator" :class="recordingBlinker == 'red' ? 'recording-indicator' : 'recording-indicator dark-border'" :style="isRecording ? '' : 'display: none'"></div>
 
-    <q-icon class="stream-down-indicator" color="red" :style="isStreamLoading ? '' : 'display: none;'" :icon="isStreamLoading && streamLoadingBlinker ? 'wifi' : 'wifi_off'" />
+    <!-- Show when the stream is down (but not on initial page load) -->
+    <q-icon class="top-right" size="4rem" color="color-sunset-2" :style="isStreamLoading && !splashLoading ? '' : 'display: none;'" :name="isStreamLoading && streamLoadingBlinker ? 'wifi' : 'wifi_off'" />
 
   </q-page>
 </template>
@@ -112,10 +105,12 @@ export default {
 
     const videoWrapper = ref(null);
     const video = ref(null);
-    const splashLoading = ref(false); // probably don't need this anymore
+    const splashLoading = ref(true); // probably don't need this anymore
     const settings = ref(null);
     const qualityControl = ref(null);
+    const streamModeControl = ref(null);
     const qualityControlIcon = ref("speed");
+    const streamControlIcon = ref("wifi")
     const isRecording = ref(false);
     const recordingBlinker = ref("red")
     const recordingIndicator = ref(null);
@@ -123,13 +118,19 @@ export default {
     const isStreamLoading = ref(false)
     const streamLoadingBlinker = ref(false)
 
+    let streamDidStart = false
     let lastVidTime = 0;
-
+    let PAGE_LOAD_TIMEOUT = 10000;
     let mediaRecorder;
     let recordedBlob;
     let recordedChunks = [];
 
+    const SERVER_COMMUNICATION_TIMEOUT = 1000; // If the server doesn't respond in this time, show an error
+    const STREAM_MONITOR_INTERVAL = 500;      // The rate at which we check if the stream is loading
+    const WEBSOCKET_RESTART_INTERVAL = 1000;   // The rate at which we attempt to reconnect to the websocket
     let socketPingHandle = 0;
+    let qualityModeHandle = 0;
+    let streamModeHandle = 0;
     let websocket;
 
     /*
@@ -143,6 +144,16 @@ export default {
       recordingBlinker.value = recordingBlinker.value == "red" ? "black" : "red";
       streamLoadingBlinker.value = !streamLoadingBlinker.value
     }, 1000);
+
+    function notifyError(msg)
+    {
+      $q.notify({
+          type: 'negative',
+          position: 'top',
+          message: msg ? msg : 'Something went wrong, try refreshing the page'
+      })
+      console.log("Sending error message: " + msg)
+    }
 
     function setupWebSocket()
     {
@@ -182,7 +193,7 @@ export default {
         // Attempt to reconnect after a delay
         setTimeout(() => {
           setupWebSocket();
-        }, 1000); // Wait for 1 second before attempting to reconnect
+        }, WEBSOCKET_RESTART_INTERVAL);
       };
     }
 
@@ -193,7 +204,34 @@ export default {
         return;
       }
 
-      const data = JSON.parse(event.data);
+      console.log("Recieved message from server: ", event.data)
+
+      try {
+        const data = JSON.parse(event.data);
+
+        if (data.message_type == "stream_mode")
+        {
+          clearInterval(streamModeHandle)
+          isStreamingMode.value = data.data == "wifi" ? true : false;
+          streamControlIcon.value = data.data == "wifi" ? "wifi" : "smart_display";
+          streamModeControl.value = false // Close the menu
+        }
+        else if (data.message_type == "quality")
+        {
+          console.log("Recieved quality message")
+          clearInterval(qualityModeHandle)
+          qualityControlIcon.value = data.data == "low" ? "cell_tower" : "speed";
+          qualityControl.value = false // Close the menu
+        }
+        else
+        {
+          console.log("Recieved unknown message type from server: ", data.message_type)
+        }
+      }
+      catch (e)
+      {
+        console.log("Recieved invalid message from server: ", e)
+      }
     }
 
     function takeScreenShot(event)
@@ -245,50 +283,33 @@ export default {
       }
     }
 
-    function toggleStreamMode(event)
+    function toggleStreamMode(mode)
     {
-      isStreamingMode.value = !isStreamingMode.value;
-
-      event.stopPropagation();
-      event.preventDefault();
-      settings.value = true
+      streamModeControl.value = true
 
       if (websocket && websocket.readyState === WebSocket.OPEN)
       {
-        websocket.send(JSON.stringify({ msg_type: "stream_mode", data: isStreamingMode.value ? "wifi" : "screen" }));
+        websocket.send(JSON.stringify({ message_type: "stream_mode", data: mode }));
+        streamModeHandle = setTimeout(() => { notifyError("The camera did not respond in time. Try waiting or refresh the screen.") }, SERVER_COMMUNICATION_TIMEOUT)
       }
       else
       {
-        $q.notify({
-          type: 'negative',
-          position: 'top',
-          message: 'Failed to reach the Camera. Try waiting or refresh the screen.'
-        })
+        notifyError("Failed to reach the camera. Try waiting or refresh the screen.")
       }
     }
 
     function setQuality(quality)
     {
+      qualityControl.value = true;
+
       if (websocket && websocket.readyState === WebSocket.OPEN)
       {
-        websocket.send(JSON.stringify({ msg_type: "quality", data: "low" }));
-
-        if (quality == "low")
-        {
-          qualityControlIcon.value = "cell_tower";
-        }
-        else
-        {
-          qualityControlIcon.value = "speed";
-        }
+        websocket.send(JSON.stringify({ message_type: "quality", data: quality }));
+        qualityModeHandle = setTimeout(() => { notifyError("The camera did not respond in time. Try waiting or refresh the screen.") }, SERVER_COMMUNICATION_TIMEOUT)
       }
       else
       {
-        $q.notify({
-          type: 'negative',
-          position: 'top',
-          message: 'Failed to reach the Camera. Try waiting or refresh the screen.'
-        })
+        notifyError("Failed to reach the camera. Try waiting or refresh the screen.")
       }
     }
 
@@ -350,21 +371,33 @@ export default {
 
       if (vidTime > lastVidTime)
       {
+        streamDidStart = true;
+
         isStreamLoading.value = false;
+        // Only used so that we don't blink the "stream down" indicator on page load
+        splashLoading.value = false
       }
       else
       {
         isStreamLoading.value = true;
       }
       lastVidTime = vidTime;
-
-      console.log(`Stream loading: ${isStreamLoading.value}`)
     }
 
     onMounted(() => {
-      //setupWebSocket();
+      setupWebSocket();
 
-      setInterval(monitorStreamStatus, 500)
+      setInterval(monitorStreamStatus, STREAM_MONITOR_INTERVAL)
+
+      // If the stream never loads eventually, signal to the user that something went wrong
+      setTimeout(() => {
+        splashLoading.value = false;
+
+        if (!streamDidStart)
+        {
+          notifyError("Failed to reach the camera. The camera stream may be down.")
+        }
+      }, PAGE_LOAD_TIMEOUT);
     });
 
     return {
@@ -373,6 +406,7 @@ export default {
       video,
       settings,
       qualityControl,
+      streamModeControl,
       recordingIndicator,
 
       // Variables
@@ -380,8 +414,10 @@ export default {
       qualityControlIcon,
       isRecording,
       recordingBlinker,
+      isStreamLoading,
       isStreamingMode,
       streamLoadingBlinker,
+      streamControlIcon,
 
       // Functions
       takeScreenShot,
@@ -425,6 +461,11 @@ export default {
   position: relative;
   width: 100%;
   height: 100%;
+  margin: 0;
+  position: absolute;
+  top: 50%;
+  -ms-transform: translateY(-50%);
+  transform: translateY(-50%);
   overflow: hidden;
 }
 
@@ -444,7 +485,14 @@ export default {
 }
 
 .bottom-right {
+  position: absolute;
   bottom: 5vh;
+  right: 5vh;
+}
+
+.top-right {
+  position: absolute;
+  top: 5vh;
   right: 5vh;
 }
 
