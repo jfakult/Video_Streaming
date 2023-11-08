@@ -272,7 +272,5 @@ recordDeleteAfter: 24h
 
 paths:
   cam:
-    runOnInit: ffmpeg -fflags nobuffer -f v4l2 -i /dev/video0 -pix_fmt yuv420p -preset ultrafast -b:v 600k -c:v libx264 -f rtsp rtsp://localhost:$RTSP_PORT/$MTX_PATH
+    runOnInit: ffmpeg -fflags nobuffer -flags low_delay -f v4l2 -analyzeduration 1000000 -i /dev/video0 -tune zerolatency -pix_fmt yuv420p -preset ultrafast -b:v 600k -c:v libx264 -x264-params keyint=24:scenecut=0 -g 24 -rtsp_transport udp -f rtsp rtsp://localhost:$RTSP_PORT/$MTX_PATH
     runOnInitRestart: yes
-
-#  -f rtsp rtsp://localhost:$RTSP_PORT/$MTX_PATH

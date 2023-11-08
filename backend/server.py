@@ -18,21 +18,29 @@ class ScopeServer:
         
         try:
             data = json.loads(message)
-            msg_type = data["msg_type"]
+            message_type = data["message_type"]
 
-            if msg_type == "quality":
+            if message_type == "quality":
                 quality = data["data"]
+                response = {"message_type": "quality", "data": quality}
                 if quality == "low":
                     pass
                 else:
                     pass
-            if msg_type == "stream_mode":
+
+                await websocket.send(json.dumps(response))
+
+            if message_type == "stream_mode":
                 print("Setting stream mode")
                 mode = data["data"]
+                response = {"message_type": "stream_mode", "data": mode}
+
                 if mode == "screen":
                     subprocess.Popen(['sh', '/home/pi/Video_Streaming/scripts/screen.sh'])
                 else: # mode == "wifi"
                     subprocess.Popen(['sh', '/home/pi/Video_Streaming/scripts/stream.sh'])
+
+                await websocket.send(json.dumps(response))
             
         except:
             websocket.send(f"Unknown message recieved: '{message}'")
