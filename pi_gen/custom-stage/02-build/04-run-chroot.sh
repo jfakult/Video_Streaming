@@ -20,8 +20,9 @@ cd /home/pi
 # Alternatively, we can insecurely run:
 # ssh-keygen -F github.com || ssh-keyscan github.com >>~/.ssh/known_hosts
 #git clone git@github.com:jfakult/Video_Streaming.git
+#git clone https://github.com/jfakult/Video_Streaming.git
+git clone https://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@github.com/jfakult/Video_Streaming.git
 
-git clone https://github.com/jfakult/Video_Streaming.git
 chown -R pi:pi Video_Streaming
 
 echo "04-chroot - INSTALLING FRONTEND DEPENDENCIES"
