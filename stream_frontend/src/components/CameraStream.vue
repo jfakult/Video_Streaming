@@ -18,16 +18,20 @@
         restartPause: 1000,
         pc: null,
         restartTimeout: null,
+        eTag: '',
         sessionUrl: '',
         queuedCandidates: [],
-        offerData: null
+        offerData: null,
+
+        // There is a discrepency between how the WebRTC client handles things (sessionURL vs eTag)
+        IS_RASPBERRY_PI: true,
       };
     },
     methods: {
       getVideoElem()
       {
-        return this.$refs.videoElement
-      }, 
+        return this.$refs.videoElement;
+      },
       unquoteCredential(v) {
         return JSON.parse(`"${v}"`);
       },
@@ -197,7 +201,11 @@
           if (res.status !== 201) {
             throw new Error('Bad status code');
           }
+          this.eTag = res.headers.get('ETag');
           this.sessionUrl = new URL(res.headers.get('location'), window.location.href).toString();
+
+          console.log("Session URL:", this.sessionUrl);
+          console.log("eTag:", this.eTag);
           return res.text();
         })
         .then(sdp => this.onRemoteAnswer(new RTCSessionDescription({
@@ -241,10 +249,21 @@
         }
 
         if (evt.candidate) {
-          if (this.sessionUrl === '') {
-            this.queuedCandidates.push(evt.candidate);
-          } else {
-            this.sendLocalCandidates([evt.candidate]);
+          if (this.IS_RASPBERRY_PI)
+          {
+            if (this.eTag === '') {
+              this.queuedCandidates.push(evt.candidate);
+            } else {
+              this.sendLocalCandidates([evt.candidate]);
+            }
+          }
+          else
+          {
+              if (this.sessionUrl === '') {
+                this.queuedCandidates.push(evt.candidate);
+              } else {
+                this.sendLocalCandidates([evt.candidate]);
+              }
           }
         }
       },
@@ -253,12 +272,22 @@
         //const url = new URL('whep', window.location.href + "cam/"); // + window.location.search;
         const url = this.sessionUrl;
 
+        let headers = {
+          'Content-Type': 'application/trickle-ice-sdpfrag',
+          'If-Match': "*",
+        }
+        if (this.IS_RASPBERRY_PI)
+        {
+          headers = {
+            'Content-Type': 'application/trickle-ice-sdpfrag',
+            'If-Match': this.eTag,
+          }
+        }
+
+        // If you are catching request errors from /cam/whep here, use this.IS_RASPBERRY_PI to flip to a potentially working version
         fetch(url, {
           method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/trickle-ice-sdpfrag',
-            'If-Match': "*",
-          },
+          headers: headers,
           body: this.generateSdpFragment(this.offerData, candidates),
         })
         .then(res => {
@@ -302,6 +331,7 @@
                     console.log('delete session error: ' + err);
                 });
         }
+        this.eTag = '';
         this.sessionUrl = '';
         this.queuedCandidates = [];
       }

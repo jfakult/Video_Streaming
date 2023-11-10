@@ -6,4 +6,6 @@ BASE="/home/pi/Video_Streaming"
 cd $BASE/backend
 nohup python server.py &
 
-$BASE/scripts/logo.sh
+cd $BASE/scripts
+nohup ./stream.sh &
+nohup ./logo.sh &
