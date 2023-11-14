@@ -23,8 +23,8 @@
            persistent
            @click.stop
            @click.prevent>
-      <q-fab-action color="color-sunset-1" @click="takeScreenShot" icon="photo_camera" class="fab-button"/>
-      <q-fab-action :color="isRecording ? recordingBlinker : 'color-sunset-2'" @click.prevent="toggleRecording" :icon="isRecording ? 'stop_circle' : 'videocam'" class="fab-button"/>
+      <q-fab-action color="color-sunset-1" @click="takeScreenShot" icon="add_a_photo" class="fab-button"/>
+      <q-fab-action :color="isRecording ? recordingBlinker : 'color-sunset-2'" @click.prevent="toggleRecording" :icon="isRecording ? 'stop_circle' : 'video_call'" class="fab-button"/>
       <q-fab v-model="streamModeControl"
              label=""
              color="color-sunset-4"
@@ -32,15 +32,46 @@
              direction="left"
              class="fab-button-inside"
              persistent>
-            <q-fab-action color="color-sunset-1" @click="toggleStreamMode('wifi')" icon="wifi" label="WiFi"/>
+            <!--
+              <q-fab-action color="color-sunset-1" @click="toggleStreamMode('wifi')" icon="wifi" label="WiFi"/>
             <q-fab-action color="color-sunset-1" @click="toggleStreamMode('screen')" icon="smart_display" label="Scope Screen"/>
-      </q-fab>
+            -->
+            <q-btn-toggle
+              v-model="model"
+              rounded
+              color="color-dark-background"
+              text-color="white"
+              toggle-color="color-sunset-1"
+              :options="[
+                {value: 'wifi', slot: 'one'},
+                {value: 'screen', slot: 'two'},
+              ]" >
+              <template v-slot:one>
+                <div class="row items-center no-wrap">
+                  <div class="text-center">
+                    View<br>On Wifi
+                  </div>
+                  <q-icon right name="wifi" />
+                </div>
+              </template>
+
+              <template v-slot:two>
+                <div class="row items-center no-wrap">
+                  <div class="text-center">
+                    View<br>On Scope
+                  </div>
+                  <q-icon right name="tablet_mac" />
+                </div>
+              </template>
+            </q-btn-toggle>
+        </q-fab>
       <q-fab v-model="qualityControl"
              label=""
              color="color-sunset-4"
              :icon="qualityControlIcon"
              direction="left"
              class="fab-button-inside"
+             :style="DEBUG_MODE ? '' : 'display: none;'"
              persistent>
             <q-fab-action color="color-sunset-1" @click="setQuality('low')" icon="cell_tower" label="Better Reliability"/>
             <q-fab-action color="color-sunset-1" @click="setQuality('high')" icon="speed" label="Better Quality"/>
@@ -58,6 +89,7 @@
       </q-btn>
     </q-fab>
 
+    <!-- The stream is loading -->
     <q-inner-loading :showing="isStreamLoading"
                      transition-duration="2000"
                      transition-show="none">
@@ -72,8 +104,11 @@
         />
     </q-inner-loading>
 
+    <!-- The stream has been redirected to the scope screen -->
     <q-inner-loading id="screenMode" :showing="!isStreamingMode" transition-duration="2000" transition-show="none">
-        <q-img src="icons/favicon-240x240.png" width="24vw" class="absolute" />
+        <q-img src="icons/favicon-240x240.png" width="60vh" class="absolute" style="top: 20vh;" />
+
+        <h4 class="absolute text-white big-font" style="top: 75vh; text-align: center;">The stream has been<br>redirected to the scope screen</h4>
 
         <q-spinner size="0vw" thickness="0" class="absolute" />
     </q-inner-loading>
@@ -117,6 +152,8 @@ export default {
     const isStreamingMode = ref(true);
     const isStreamLoading = ref(false)
     const streamLoadingBlinker = ref(false)
+
+    const DEBUG_MODE = ref(window.location.search.includes("debug") || window.location.search.includes("DEBUG"))
 
     let streamDidStart = false
     let lastVidTime = 0;
@@ -418,6 +455,7 @@ export default {
       isStreamingMode,
       streamLoadingBlinker,
       streamControlIcon,
+      DEBUG_MODE,
 
       // Functions
       takeScreenShot,
