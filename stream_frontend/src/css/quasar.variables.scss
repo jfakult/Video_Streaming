@@ -18,6 +18,7 @@
     --q-color-sunset-3: #64E4E9;
     --q-color-sunset-4: #4BA6B1;
     --q-color-dark-background: #0C333D;
+    --q-color-very-dark-background: #0d191c;
     --q-color-dark-green: #33924d;
 }
 
@@ -50,6 +51,12 @@
 }
 .text-color-dark-background {
     color: var(--q-color-dark-background);
+}
+.bg-color-very-dark-background {
+    background-color: var(--q-color-very-dark-background);
+}
+.text-color-very-dark-background {
+    color: var(--q-color-very-dark-background);
 }
 .bg-color-dark-green {
     background-color: var(--q-color-dark-green);

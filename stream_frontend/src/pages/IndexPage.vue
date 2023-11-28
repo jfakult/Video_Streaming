@@ -1,4 +1,5 @@
 <template>
+  <!-- meta tag also added to header in index.html to allow pinch zooming -->
   <q-page class="video-container">
 
     <div class="backdrop"></div>
@@ -13,58 +14,96 @@
     </q-btn>
     -->
 
-    <q-fab class="absolute bottom-right fab-button fab-button-big"
-           v-model="settings"
-           label=""
-           vertical-actions-align="right"
-           color="color-dark-green"
-           icon="settings"
-           direction="up"
-           persistent
-           @click.stop
-           @click.prevent>
-      <q-fab-action color="color-sunset-1" @click="takeScreenShot" icon="add_a_photo" class="fab-button"/>
-      <q-fab-action :color="isRecording ? recordingBlinker : 'color-sunset-2'" @click.prevent="toggleRecording" :icon="isRecording ? 'stop_circle' : 'video_call'" class="fab-button"/>
-      <q-fab v-model="streamModeControl"
-             label=""
-             color="color-sunset-4"
-             :icon="streamControlIcon"
-             direction="left"
-             class="fab-button-inside"
-             persistent>
-            <!--
-              <q-fab-action color="color-sunset-1" @click="toggleStreamMode('wifi')" icon="wifi" label="WiFi"/>
-            <q-fab-action color="color-sunset-1" @click="toggleStreamMode('screen')" icon="smart_display" label="Scope Screen"/>
-            -->
+    <q-btn-toggle
+      :class="interactionIdleTimeExpired ? 'fade-out bottom-right' : 'bottom-right'"
+      v-model="streamModeControl"
+      @update:model-value="toggleStreamMode"
+      rounded
+      color="grey-6"
+      text-color="white"
+      toggle-color="primary"
+      :options="[
+        {value: 'scope', slot: 'one'},
+        {value: 'stream', slot: 'two'},
+      ]" >
+      <template v-slot:one>
+        <div class="row items-center no-wrap">
+          <div class="text-center">
+            Scope
+          </div>
+        </div>
+      </template>
+
+      <template v-slot:two>
+        <div class="row items-center no-wrap">
+          <div class="text-center">
+            Stream
+          </div>
+        </div>
+      </template>
+    </q-btn-toggle>
+
+    <div :class="interactionIdleTimeExpired ? 'fade-out controls-container bottom-right' : 'controls-container bottom-right'">
+      <q-button>
+        <q-icon name="help" color="white" size="2rem" />
+        <q-popup-proxy
+          @show="voidIdleTimer"
+          @hide="resetIdleTimer"
+          breakpoint="600px">
+          <q-banner>
+            <template v-slot:avatar>
+              <q-icon name="help" color="color-dark-background" />
+            </template>
+            <br /><br />
+            <q-icon name="add_a_photo" color="color-dark-background" size="2rem" style="width: 100%;" /><br />This button will take a screenshot and save it!<br /><br />
+            <q-icon name="video_call" color="color-dark-background" size="2rem" style="width: 100%;" /><br />This button starts a video recording of the stream! The blinking  <q-icon name="stop_circle" color="red" size="1.5rem" /> indicates it is recording. Press it again to save the video<br /><br />
+            <q-icon name="fullscreen" color="color-dark-background" size="2rem" style="width: 100%;" /><br />This button toggles fullscreen mode<br /><br />
             <q-btn-toggle
-              v-model="model"
+              v-model="streamModeControl"
+              class="center tiny"
               rounded
-              color="color-dark-background"
+              color="grey-6"
               text-color="white"
-              toggle-color="color-sunset-1"
+              toggle-color="primary"
+              style="pointer-events: none;"
               :options="[
-                {value: 'wifi', slot: 'one'},
-                {value: 'screen', slot: 'two'},
+                {value: 'scope', slot: 'one'},
+                {value: 'stream', slot: 'two'},
               ]" >
               <template v-slot:one>
                 <div class="row items-center no-wrap">
                   <div class="text-center">
-                    View<br>On Wifi
+                    Scope
                   </div>
-                  <q-icon right name="wifi" />
                 </div>
               </template>
 
               <template v-slot:two>
                 <div class="row items-center no-wrap">
                   <div class="text-center">
-                    View<br>On Scope
+                    Stream
                   </div>
-                  <q-icon right name="tablet_mac" />
                 </div>
               </template>
-            </q-btn-toggle>
-        </q-fab>
+            </q-btn-toggle><br />Use this toggle to change where the stream points. <span class="text-primary">STREAM</span> mode will live stream to your device. <span class="text-primary">SCOPE</span> mode will display the stream on the round scope screen.<br /><br />
+            <span class="text-primary text-center text-bold">Reconnecting</span><br />This message indicates the stream has been dropped temporarily. If it does not reconnect quickly, refresh the page. If this does not help, verify the WiFi is still connected, and if needed, disconnect and reconnect to <span class="text-primary">WildStreamWiFi</span>. As a final measure, power the WildStream device off and back on.<br /><br />
+          </q-banner>
+        </q-popup-proxy>
+
+      </q-button>
+
+      <q-button @click="toggleFullScreen">
+        <q-icon :name="isFullscreen ? 'fullscreen_exit' : 'fullscreen'" color="white" size="2rem" />
+      </q-button>
+
+      <q-button @click.prevent="toggleRecording">
+        <q-icon :name="isRecording ? 'stop_circle' : 'video_call'" :color="isRecording ? recordingBlinker : 'white'" size="2rem" />
+      </q-button>
+
+      <q-button @click="takeScreenShot">
+        <q-icon name="add_a_photo" color="white" size="2rem" />
+      </q-button>
+      <!-- Vestigial features
       <q-fab v-model="qualityControl"
              label=""
              color="color-sunset-4"
@@ -76,47 +115,54 @@
             <q-fab-action color="color-sunset-1" @click="setQuality('low')" icon="cell_tower" label="Better Reliability"/>
             <q-fab-action color="color-sunset-1" @click="setQuality('high')" icon="speed" label="Better Quality"/>
       </q-fab>
+      -->
       <!--<q-fab-action color="info" class="fab-button" @click="toggleHelp" icon="help" />-->
-      <q-btn color="info" icon="help" class="fab-button">
-        <q-popup-proxy>
-          <q-banner>
-            <template v-slot:avatar>
-              <q-icon name="help" color="info" />
-            </template>
-            This is a help menu! But there is nothing helpful here yet...
-          </q-banner>
-        </q-popup-proxy>
-      </q-btn>
-    </q-fab>
+    </div>
 
     <!-- The stream is loading -->
     <q-inner-loading :showing="isStreamLoading"
                      transition-duration="2000"
-                     transition-show="none">
+                     transition-show="none"
+                     :class="splashLoading ? 'dark-background' : ''">
 
-        <q-img src="icons/favicon-240x240.png" width="24vw" class="absolute" :style="splashLoading ? '' : 'display: none;'" />
+        <q-img src="icons/Wildstream_logo.png" width="24vw" class="absolute" :style="splashLoading ? '' : 'display: none;'" />
 
         <q-spinner
-          color="color-sunset-1"
+          :color="splashLoading ? 'color-sunset-1' : 'primary'"
           :size="splashLoading ? '30vw' : '20vw'"
           thickness="1"
           class="absolute"
         />
+
+        <h4 class="absolute text-primary big-font" :style="splashLoading ? 'display: none' : ''">Reconnecting...</h4>
+
     </q-inner-loading>
 
-    <!-- The stream has been redirected to the scope screen -->
     <q-inner-loading id="screenMode" :showing="!isStreamingMode" transition-duration="2000" transition-show="none">
-        <q-img src="icons/favicon-240x240.png" width="60vh" class="absolute" style="top: 20vh;" />
+        <q-img src="icons/Wildstream_logo.png" width="60vh" class="absolute" style="top: 20vh;" />
 
-        <h4 class="absolute text-white big-font" style="top: 75vh; text-align: center;">The stream has been<br>redirected to the scope screen</h4>
+        <h4 class="absolute text-white big-font" style="">The stream has been<br>redirected to the scope screen</h4>
 
-        <q-spinner size="0vw" thickness="0" class="absolute" />
+        <!-- Disable the default spinner by creating an empty one -->
+        <q-spinner size="0vw" thickness="0" class="absolute"/>
     </q-inner-loading>
 
     <div ref="recording-indicator" :class="recordingBlinker == 'red' ? 'recording-indicator' : 'recording-indicator dark-border'" :style="isRecording ? '' : 'display: none'"></div>
 
-    <!-- Show when the stream is down (but not on initial page load) -->
-    <q-icon class="top-right" size="4rem" color="color-sunset-2" :style="isStreamLoading && !splashLoading ? '' : 'display: none;'" :name="isStreamLoading && streamLoadingBlinker ? 'wifi' : 'wifi_off'" />
+    <!--
+    <div :class="interactionIdleTimeExpired ? 'fade-out controls-container top-right' : 'controls-container top-right'">
+      <q-button @click="toggleFullScreen">
+        <q-icon :name="isFullscreen ? 'fullscreen_exit' : 'fullscreen'" color="white" size="2rem" />
+      </q-button>
+
+      <!-=- Show when the stream is down (but not on initial page load) -->
+      <!--
+        <q-icon size="3rem" color="color-sunset-2" :style="isStreamLoading && !splashLoading ? '' : 'display: none;'" :name="isStreamLoading && streamLoadingBlinker ? 'wifi' : 'wifi_off'" />
+      -=->
+    </div>
+    -->
+
+    <q-img class="bottom-left" width="3rem" src="icons/Wildstream_logo.png" />
 
   </q-page>
 </template>
@@ -142,22 +188,24 @@ export default {
     const video = ref(null);
     const splashLoading = ref(true); // probably don't need this anymore
     const settings = ref(null);
-    const qualityControl = ref(null);
-    const streamModeControl = ref(null);
-    const qualityControlIcon = ref("speed");
-    const streamControlIcon = ref("wifi")
+    //const qualityControl = ref(null);
+    const streamModeControl = ref("stream");
+    //const qualityControlIcon = ref("speed");
+    //const streamControlIcon = ref("wifi")
     const isRecording = ref(false);
     const recordingBlinker = ref("red")
     const recordingIndicator = ref(null);
     const isStreamingMode = ref(true);
     const isStreamLoading = ref(false)
     const streamLoadingBlinker = ref(false)
+    const interactionIdleTimeExpired = ref(false)
+    const isFullscreen = ref(false)
 
     const DEBUG_MODE = ref(window.location.search.includes("debug") || window.location.search.includes("DEBUG"))
 
     let streamDidStart = false
     let lastVidTime = 0;
-    let PAGE_LOAD_TIMEOUT = 10000;
+    let PAGE_LOAD_TIMEOUT = 5000;
     let mediaRecorder;
     let recordedBlob;
     let recordedChunks = [];
@@ -168,6 +216,7 @@ export default {
     let socketPingHandle = 0;
     let qualityModeHandle = 0;
     let streamModeHandle = 0;
+    let interactionTimeoutHandler = 0;
     let websocket;
 
     /*
@@ -250,16 +299,16 @@ export default {
         {
           clearInterval(streamModeHandle)
           isStreamingMode.value = data.data == "wifi" ? true : false;
-          streamControlIcon.value = data.data == "wifi" ? "wifi" : "smart_display";
-          streamModeControl.value = false // Close the menu
+          //streamControlIcon.value = data.data == "wifi" ? "wifi" : "smart_display";
         }
+        /*
         else if (data.message_type == "quality")
         {
           console.log("Recieved quality message")
           clearInterval(qualityModeHandle)
           qualityControlIcon.value = data.data == "low" ? "cell_tower" : "speed";
-          qualityControl.value = false // Close the menu
         }
+        */
         else
         {
           console.log("Recieved unknown message type from server: ", data.message_type)
@@ -322,8 +371,6 @@ export default {
 
     function toggleStreamMode(mode)
     {
-      streamModeControl.value = true
-
       if (websocket && websocket.readyState === WebSocket.OPEN)
       {
         websocket.send(JSON.stringify({ message_type: "stream_mode", data: mode }));
@@ -335,7 +382,7 @@ export default {
       }
     }
 
-    function setQuality(quality)
+    /*function setQuality(quality)
     {
       qualityControl.value = true;
 
@@ -348,7 +395,7 @@ export default {
       {
         notifyError("Failed to reach the camera. Try waiting or refresh the screen.")
       }
-    }
+    }*/
 
     function startRecording()
     {
@@ -421,7 +468,62 @@ export default {
       lastVidTime = vidTime;
     }
 
+    function voidIdleTimer()
+    {
+      interactionIdleTimeExpired.value = false
+      clearInterval(interactionTimeoutHandler)
+      console.log(interactionIdleTimeExpired.value)
+    }
+
+    function resetIdleTimer()
+    {
+      interactionIdleTimeExpired.value = false
+      clearTimeout(interactionTimeoutHandler)
+      interactionTimeoutHandler = setTimeout(() => { interactionIdleTimeExpired.value = true }, 15000)
+    }
+
+    window.addEventListener('mousemove', resetIdleTimer);
+    window.addEventListener('mousedown', resetIdleTimer);
+    window.addEventListener('keypress', resetIdleTimer);
+    window.addEventListener('touchmove', resetIdleTimer);
+
+    function openFullscreen() {
+      const elem = document.documentElement;
+      if (elem.requestFullscreen) {
+        elem.requestFullscreen();
+      } else if (elem.webkitRequestFullscreen) { /* Safari */
+        elem.webkitRequestFullscreen();
+      } else if (elem.msRequestFullscreen) { /* IE11 */
+        elem.msRequestFullscreen();
+      }
+    }
+
+    /* Close fullscreen */
+    function closeFullscreen() {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      } else if (document.webkitExitFullscreen) { /* Safari */
+        document.webkitExitFullscreen();
+      } else if (document.msExitFullscreen) { /* IE11 */
+        document.msExitFullscreen();
+      }
+    }
+
+    function toggleFullScreen()
+    {
+      if (!isFullscreen.value)
+      {
+        openFullscreen();
+      }
+      else
+      {
+        closeFullscreen();
+      }
+      isFullscreen.value = !isFullscreen.value
+    }
+
     onMounted(() => {
+      // EDIT AS NEEDED
       setupWebSocket();
 
       setInterval(monitorStreamStatus, STREAM_MONITOR_INTERVAL)
@@ -442,41 +544,44 @@ export default {
       videoWrapper,
       video,
       settings,
-      qualityControl,
+      //qualityControl,
       streamModeControl,
       recordingIndicator,
 
       // Variables
       splashLoading,
-      qualityControlIcon,
+      //qualityControlIcon,
       isRecording,
       recordingBlinker,
       isStreamLoading,
       isStreamingMode,
       streamLoadingBlinker,
-      streamControlIcon,
+      //streamControlIcon,
       DEBUG_MODE,
+      interactionIdleTimeExpired,
+      isFullscreen,
 
       // Functions
       takeScreenShot,
       toggleRecording,
-      setQuality,
+      //setQuality,
       toggleStreamMode,
       videoOnPlay,
       videoOnPause,
+      toggleFullScreen,
+      voidIdleTimer,
+      resetIdleTimer,
     };
   },
 };
 </script>
-
 <style scoped>
-
 .backdrop {
   position: absolute;
   width: 100vw;
   height: 100vh;
   z-index: -1;
-  background: var(--q-color-dark-background);
+  background: var(--q-color-very-dark-background);
 }
 
 .recording-indicator {
@@ -524,58 +629,92 @@ export default {
 
 .bottom-right {
   position: absolute;
-  bottom: 5vh;
-  right: 5vh;
+  bottom: 3vh;
+  right: 3vh;
+  z-index: 1;
+}
+
+.bottom-left {
+  position: absolute;
+  bottom: 3vh;
+  left: 3vh;
+  z-index: 1;
 }
 
 .top-right {
   position: absolute;
-  top: 5vh;
-  right: 5vh;
+  top: 3vh;
+  right: 3vh;
 }
 
 .q-inner-loading {
-  background-color: var(--q-color-dark-background);
+  background-color: var(--q-color-very-dark-background);
 }
 
-.fab-button, .fab-button-inside {
-  width: 4vw;
-  height: 4vw;
-}
-div.fab-button-big {
-  width: 5vw;
-  height: 5vw;
-}
-:deep(.fab-button-big > a) {
-  border-radius: 5vw;
-}
-:deep(.fab-button-inside > a) {
-  border-radius: 4vw;
+.controls-container {
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.1rem;
+
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 1.5rem;
+
+  opacity: 1;
+  transition: opacity 1s ease;
 }
 
-:deep(div.q-fab--form-rounded, .fab-button, .fab-button-big) {
-  margin: 0;
+.big-font {
+  /* Place halfway plus size of spinner */
+  top: calc(50vh + 10vw);
+  font-size: calc(2vw + 2vh);
+  line-height: 0;
+  text-align: center;
 }
-button.fab-button {
-  margin: 0;
-  border-radius: 100%;
+
+q-button {
+  background: var(--q-color-dark-background);
+  border-radius: 1rem;
+  padding: 0.5rem;
+  margin: 0.5rem;
+  cursor: pointer;
 }
-:deep(.q-fab__actions) {
-  margin: 0;
+
+.q-btn-group--rounded {
+  border-radius: 1rem;
+  opacity: 1;
+  transition: opacity 1s ease;
+  right: calc(6vh + 4.2rem);
 }
-div.fab-button-inside, :deep(.q-fab__actions--opened>a.q-fab--form-rounded) {
-  margin: 0;
-  margin-top: 2vh;
-  margin-left: 1vw;
-  border-radius: 5vw;
+
+.fade-out {
+  opacity: 0;
+  pointer-events: none;
 }
-:deep(div.q-fab__actions--opened) {
-  margin-bottom: 3vh !important;
+
+.dark-background {
+  background: var(--q-color-dark-background);
 }
-:deep(div.fab-button-inside > .q-fab__actions--opened) {
-  margin-right: 1vw !important;
+
+/* Have to call from root to override quasar classes */
+:global(.q-menu) {
+  overflow-y: visible !important;
 }
-:deep(.fab-button-inside > a) {
-  margin: 0;
+
+.center {
+  left: 50%;
+  transform: translate(-50%, 0%);
+}
+
+.text-center {
+  text-align: center;
+  display: inline-block;
+  width: 100%;
+}
+
+.tiny {
+  zoom: 0.66;
 }
 </style>
