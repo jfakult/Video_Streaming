@@ -15,6 +15,7 @@
 
     data() {
       return {
+        // EDIT AS NEEDED
         restartPause: 1000,
         pc: null,
         restartTimeout: null,
