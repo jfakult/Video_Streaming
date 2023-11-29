@@ -47,25 +47,40 @@
       <q-button>
         <q-icon name="help" color="white" size="2rem" />
         <q-popup-proxy
+          ref="helpPopup"
           @show="voidIdleTimer"
           @hide="resetIdleTimer"
-          breakpoint="600px">
+          style="max-height: 80vh !important;">
           <q-banner>
-            <template v-slot:avatar>
+            <!--<template v-slot:avatar>
               <q-icon name="help" color="color-dark-background" />
-            </template>
-            <br /><br />
-            <q-icon name="add_a_photo" color="color-dark-background" size="2rem" style="width: 100%;" /><br />This button will take a screenshot and save it!<br /><br />
-            <q-icon name="video_call" color="color-dark-background" size="2rem" style="width: 100%;" /><br />This button starts a video recording of the stream! The blinking  <q-icon name="stop_circle" color="red" size="1.5rem" /> indicates it is recording. Press it again to save the video<br /><br />
-            <q-icon name="fullscreen" color="color-dark-background" size="2rem" style="width: 100%;" /><br />This button toggles fullscreen mode<br /><br />
+            </template>-->
+            <div class="help-menu-header">
+              <q-icon style="display: inline;" name="help" color="color-dark-background" size="3rem" />
+              <h5 class="text-bold">User Guide</h5>
+              <q-icon name="close" color="color-dark-background" size="2rem" class="close-button" @click="closeHelpMenu" />
+            </div>
+            <br />
+            <q-button style="cursor: default; display: block; width: fit-content; margin-left: 0;">
+              <q-icon name="add_a_photo" color="white" size="1.25rem" />
+            </q-button>
+            <div class="help-menu-text">This button will take a screenshot and save it!</div>
+            <q-button style="cursor: default; display: block; width: fit-content; margin-left: 0;">
+              <q-icon name="video_call" color="white" size="1.5rem" />
+            </q-button>
+            <div class="help-menu-text">This button starts a video recording of the stream! The blinking  <q-icon name="stop_circle" color="red" size="1.5rem" /> indicates it is recording. Press it again to save the video</div>
+            <q-button style="cursor: default; display: block; width: fit-content; margin-left: 0;">
+              <q-icon name="fullscreen" color="white" size="1.5rem" />
+            </q-button>
+            <div class="help-menu-text">This button toggles fullscreen mode</div>
             <q-btn-toggle
               v-model="streamModeControl"
-              class="center tiny"
               rounded
+              class="tiny"
               color="grey-6"
               text-color="white"
               toggle-color="primary"
-              style="pointer-events: none;"
+              style="pointer-events: none; margin-bottom: 8px; transform: translateX(50%); margin-left: 1rem;"
               :options="[
                 {value: 'scope', slot: 'one'},
                 {value: 'stream', slot: 'two'},
@@ -85,8 +100,10 @@
                   </div>
                 </div>
               </template>
-            </q-btn-toggle><br />Use this toggle to change where the stream points. <span class="text-primary">STREAM</span> mode will live stream to your device. <span class="text-primary">SCOPE</span> mode will display the stream on the round scope screen.<br /><br />
-            <span class="text-primary text-center text-bold">Reconnecting</span><br />This message indicates the stream has been dropped temporarily. If it does not reconnect quickly, refresh the page. If this does not help, verify the WiFi is still connected, and if needed, disconnect and reconnect to <span class="text-primary">WildStreamWiFi</span>. As a final measure, power the WildStream device off and back on.<br /><br />
+            </q-btn-toggle>
+            <div class="help-menu-text">Use this toggle to change where the stream points. <span class="text-bold">STREAM</span> mode will live stream to your device. <span class="text-bold">SCOPE</span> mode will display the stream on the round scope screen.</div>
+            <div class="help-menu-text text-bold" style="margin-bottom: 0;">Reconnecting...</div>
+            <div class="help-menu-text">If the stream is down, and does not come back in a few seconds, try refreshing the page. If this does not help, verify the WiFi is still connected, and if needed, disconnect and reconnect to <span class="text-bold">WildStreamWiFi</span>. As a final measure, power the WildStream device off and back on.</div>
           </q-banner>
         </q-popup-proxy>
 
@@ -97,11 +114,11 @@
       </q-button>
 
       <q-button @click.prevent="toggleRecording">
-        <q-icon :name="isRecording ? 'stop_circle' : 'video_call'" :color="isRecording ? recordingBlinker : 'white'" size="2rem" />
+        <q-icon :name="isRecording ? 'stop_circle' : 'video_call'" :color="isRecording ? recordingBlinker : (isStreamLoading ? 'grey-9' : 'white')" size="2rem" />
       </q-button>
 
       <q-button @click="takeScreenShot">
-        <q-icon name="add_a_photo" color="white" size="2rem" />
+        <q-icon name="add_a_photo" :color="isStreamLoading ? 'grey-9' : 'white'" size="2rem" />
       </q-button>
       <!-- Vestigial features
       <q-fab v-model="qualityControl"
@@ -128,13 +145,13 @@
         <q-img src="icons/Wildstream_logo.png" width="24vw" class="absolute" :style="splashLoading ? '' : 'display: none;'" />
 
         <q-spinner
-          :color="splashLoading ? 'color-sunset-1' : 'primary'"
+          color="color-sunset-1"
           :size="splashLoading ? '30vw' : '20vw'"
           thickness="1"
           class="absolute"
         />
 
-        <h4 class="absolute text-primary big-font" :style="splashLoading ? 'display: none' : ''">Reconnecting...</h4>
+        <h4 class="absolute text-color-sunset-1 big-font" :style="splashLoading ? 'display: none' : ''">Reconnecting...</h4>
 
     </q-inner-loading>
 
@@ -188,6 +205,7 @@ export default {
     const video = ref(null);
     const splashLoading = ref(true); // probably don't need this anymore
     const settings = ref(null);
+    const helpPopup = ref(null);
     //const qualityControl = ref(null);
     const streamModeControl = ref("stream");
     //const qualityControlIcon = ref("speed");
@@ -196,7 +214,7 @@ export default {
     const recordingBlinker = ref("red")
     const recordingIndicator = ref(null);
     const isStreamingMode = ref(true);
-    const isStreamLoading = ref(false)
+    const isStreamLoading = ref(true)
     const streamLoadingBlinker = ref(false)
     const interactionIdleTimeExpired = ref(false)
     const isFullscreen = ref(false)
@@ -324,6 +342,12 @@ export default {
     {
       event.stopPropagation();
       event.preventDefault();
+
+      if (isStreamLoading.value)
+      {
+        return;
+      }
+
       settings.value = true
       let canvas = document.createElement('canvas');
 
@@ -353,6 +377,11 @@ export default {
 
     function toggleRecording(event)
     {
+      if (isStreamLoading.value)
+      {
+        return;
+      }
+
       isRecording.value = !isRecording.value;
 
       event.stopPropagation();
@@ -463,6 +492,12 @@ export default {
       }
       else
       {
+        // The stream crashed while we were recording, stop it and download the video
+        if (isRecording.value)
+        {
+          toggleRecording()
+        }
+
         isStreamLoading.value = true;
       }
       lastVidTime = vidTime;
@@ -522,6 +557,11 @@ export default {
       isFullscreen.value = !isFullscreen.value
     }
 
+    function closeHelpMenu()
+    {
+      helpPopup.value.hide()
+    }
+
     onMounted(() => {
       // EDIT AS NEEDED
       setupWebSocket();
@@ -547,6 +587,7 @@ export default {
       //qualityControl,
       streamModeControl,
       recordingIndicator,
+      helpPopup,
 
       // Variables
       splashLoading,
@@ -571,6 +612,7 @@ export default {
       toggleFullScreen,
       voidIdleTimer,
       resetIdleTimer,
+      closeHelpMenu,
     };
   },
 };
@@ -678,7 +720,7 @@ q-button {
   background: var(--q-color-dark-background);
   border-radius: 1rem;
   padding: 0.5rem;
-  margin: 0.5rem;
+  margin: 12px;
   cursor: pointer;
 }
 
@@ -686,7 +728,8 @@ q-button {
   border-radius: 1rem;
   opacity: 1;
   transition: opacity 1s ease;
-  right: calc(6vh + 4.2rem);
+  right: calc(6vh + 3rem + 24px);
+  margin-bottom: 12px;
 }
 
 .fade-out {
@@ -715,6 +758,38 @@ q-button {
 }
 
 .tiny {
-  zoom: 0.66;
+  zoom: 0.8;
+}
+
+.popup-window {
+  left: 3vh;
+  right: 3vh;
+}
+
+.close-button {
+  cursor: pointer;
+  float: right;
+  background: white;
+  border-radius: 100%;
+  height: 100%;
+  line-height: 3rem;
+}
+
+.help-menu-text {
+  font-size: 1.5rem;
+  line-height: 1.5rem;
+  max-width: calc(97vw - 0.5rem - 64px);
+  margin-bottom: 2rem;
+}
+
+.help-menu-header {
+  width: 100%;
+  padding: 1rem;
+  border-bottom: 1px solid grey;
+}
+.help-menu-header h5 {
+  margin: 8px;
+  vertical-align: middle;
+  display: inline-block;
 }
 </style>
