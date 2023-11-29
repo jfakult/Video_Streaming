@@ -76,3 +76,7 @@ $positive  : #21BA45;
 $negative  : #C10015;
 $info      : #31CCEC;
 $warning   : #F2C037;
+
+$body-font-size   : var(--q-theme-font-size, 18px);
+$body-line-height : 18px;
+$button-font-size: var(--q-theme-btn-font-size, 18px);

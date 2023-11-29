@@ -68,7 +68,7 @@ module.exports = configure(function (/* ctx */) {
       // rebuildCache: true, // rebuilds Vite/linter/etc cache on startup
 
       // EDIT AS NEEDED
-      // publicPath: '/wildstream',
+      //publicPath: '/wildstream',
       publicPath: '/',
       // analyze: true,
       // env: {},
