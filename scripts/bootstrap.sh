@@ -20,6 +20,7 @@ systemctl enable startup_camera.service && \
 systemctl enable nginx && \
 systemctl enable dnsmasq && \
 systemctl unmask hostapd && \
+systemctl start hostapd && \
 $BASE/scripts/enable_hotspot.sh
 
 # Make sure to rebuild the latest frontend source
