@@ -13,12 +13,13 @@ cp $BASE/config/startup_camera.service /lib/systemd/system
 cp $BASE/config/10_interface_hotspot.conf /etc/network/interfaces.d/
 cp $BASE/config/20_interface_wifi.conf /etc/network/interfaces.d/
 
+rfkill unblock all
+
 systemctl daemon-reload && \
 systemctl enable startup_camera.service && \
 systemctl enable nginx && \
 systemctl enable dnsmasq && \
 systemctl unmask hostapd && \
-
 $BASE/scripts/enable_hotspot.sh
 
 # Make sure to rebuild the latest frontend source
