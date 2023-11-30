@@ -80,7 +80,7 @@
               color="grey-6"
               text-color="white"
               toggle-color="primary"
-              style="pointer-events: none; margin-bottom: 8px; transform: translateX(50%); margin-left: 1rem;"
+              style="pointer-events: none; margin-bottom: 8px; right: 0;"
               :options="[
                 {value: 'scope', slot: 'one'},
                 {value: 'stream', slot: 'two'},
