@@ -1,6 +1,6 @@
 <template>
     <div id="camera-stream-container">
-      <video ref="videoElement" id="video" autoplay playsinline muted preload="auto" @onplay="onplay" @onpause="onpause"></video>
+      <video ref="videoElement" id="video" autoplay playsinline muted preload="auto" @onplay="onplay" @onpause="onpause" :controls="showControls"></video>
     </div>
 </template>
   
@@ -11,12 +11,13 @@
     props: {
         onplay: Function,
         onpause: Function,
+        showControls: Boolean,
     },
 
     data() {
       return {
         // EDIT AS NEEDED
-        restartPause: 1000,
+        restartPause: 50000,
         pc: null,
         restartTimeout: null,
         eTag: '',
