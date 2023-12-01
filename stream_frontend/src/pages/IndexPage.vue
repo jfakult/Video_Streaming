@@ -427,7 +427,7 @@ export default {
 
     function toggleRecording(event)
     {
-      if ((isStreamLoading.value || ffmpeg.loaded) && false)
+      if (isStreamLoading.value || ffmpeg.loaded)
       {
         return;
       }
@@ -552,16 +552,16 @@ export default {
         await ffmpeg.writeFile(`frame${i}.jpeg`, uint8Array);
       }
 
-      // Example FFmpeg command to compile frames into a video
-      console.log(['-framerate', '30', '-i', 'frame%d.jpeg', '-c:v', 'libx264', filename])
       await ffmpeg.exec(['-framerate', '30', '-i', 'frame%d.jpeg', '-c:v', 'libx264', filename]);
-
 
       const data = await ffmpeg.readFile(filename);
       const videoBlob = new Blob([data.buffer], { type: 'video/mp4' });
       const url = URL.createObjectURL(videoBlob);
-      
-      // You can now use 'url' as the source for a video element or create a download link
+
+      // Save us some memory?
+      recordedVideoFrames = [];
+
+      return url;
     }
 
     function downloadVideo()
@@ -700,7 +700,7 @@ export default {
 
     onMounted(() => {
       // EDIT AS NEEDED
-      //setupWebSocket();
+      setupWebSocket();
 
       setInterval(monitorStreamStatus, STREAM_MONITOR_INTERVAL)
 
