@@ -221,9 +221,9 @@ export default {
     const interactionIdleTimeExpired = ref(false)
     const isFullscreen = ref(false)
     const isIOS = ref(true);//ref(navigator.platform.indexOf('iPhone') !== -1 || navigator.platform.indexOf('iPad') !== -1 || navigator.platform.indexOf('iPod') !== -1);
-    const supportsMediaRecorder = false; // window.MediaRecorder !== undefined;
+    const supportsMediaRecorder = window.MediaRecorder !== undefined;
 
-    let ffmpeg;
+    /*let ffmpeg;
     if (!supportsMediaRecorder)
     {
       ffmpeg = new FFmpeg();
@@ -241,6 +241,7 @@ export default {
         //await ffmpeg.load()
       })();
     }
+    */
 
     const DEBUG_MODE = ref(window.location.search.includes("debug") || window.location.search.includes("DEBUG"))
 
@@ -427,7 +428,13 @@ export default {
 
     function toggleRecording(event)
     {
-      if (isStreamLoading.value || ffmpeg.loaded)
+      if (!supportsMediaRecorder)
+      {
+        //notifyWarning("Warning, this browser does not support native video recording. The resulting video may display lower quality or framerates")
+        notifyWarning("Warning, this browser does not support native video recording. In order to record try updating the current browser or use a different browser such as Google Chrome.")
+        return;
+      }
+      if (isStreamLoading.value || !ffmpeg.loaded)
       {
         return;
       }
@@ -498,7 +505,6 @@ export default {
 
       if (!supportsMediaRecorder)
       {
-        notifyWarning("Warning, this browser does not support native video recording. The resulting video may display lower quality or framerates")
         options = { mimeType: "video/mp4" };
         type = "video/mp4";
         function step() {
