@@ -155,10 +155,10 @@
 
     </q-inner-loading>
 
-    <q-inner-loading id="screenMode" :showing="!isStreamingMode" transition-duration="2000" transition-show="none">
-        <q-img src="icons/Wildstream_logo.png" width="60vh" class="absolute" style="top: 20vh;" />
+    <q-inner-loading id="screenMode" :showing="!isStreamingMode || true" transition-duration="2000" transition-show="none">
+        <q-img src="icons/Wildstream_logo.png" class="logo-size absolute" />
 
-        <h4 class="absolute text-white big-font" style="">The stream has been<br>redirected to the scope screen</h4>
+        <div class="absolute text-white big-font" style="">The stream has been<br>redirected to the scope</div>
 
         <!-- Disable the default spinner by creating an empty one -->
         <q-spinner size="0vw" thickness="0" class="absolute"/>
@@ -717,11 +717,17 @@ export default {
   transition: opacity 1s ease;
 }
 
+.logo-size {
+  top: 50%;
+  transform: translateY(-50%);
+  width: calc(15vw + 25vh);
+  height: calc(15vw + 25vh);
+}
+
 .big-font {
   /* Place halfway plus size of spinner */
-  top: calc(50vh + 10vw);
-  font-size: calc(2vw + 2vh);
-  line-height: 0;
+  top: calc(50vh - 7.5vw - 12.5vh - 54px);
+  font-size: 18px;
   text-align: center;
 }
 
