@@ -155,7 +155,7 @@
 
     </q-inner-loading>
 
-    <q-inner-loading id="screenMode" :showing="!isStreamingMode || true" transition-duration="2000" transition-show="none">
+    <q-inner-loading id="screenMode" :showing="!isStreamingMode" transition-duration="2000" transition-show="none">
         <q-img src="icons/Wildstream_logo.png" class="logo-size absolute" />
 
         <div class="absolute text-white big-font" style="">The stream has been<br>redirected to the scope</div>
