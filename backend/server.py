@@ -56,6 +56,9 @@ class ScopeServer:
             print("Got error on new websocket connection: ", e)
 
 if __name__ == "__main__":
+    print("Starting streaming service")
+    subprocess.Popen(['sh', '/home/pi/Video_Streaming/scripts/stream.sh'])
+    
     server = ScopeServer()
 
     print("Starting WebSocket server on 0.0.0.0:9000...")
