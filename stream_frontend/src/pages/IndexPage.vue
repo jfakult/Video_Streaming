@@ -644,6 +644,7 @@ export default {
   z-index: 1;
   border: 4px solid red;
   border-radius: 4px;
+  pointer-events: none;
 }
 
 .dark-border {
