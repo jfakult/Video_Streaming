@@ -434,7 +434,7 @@ export default {
         notifyWarning("Warning, this browser does not support native video recording. In order to record try updating the current browser or use a different browser such as Google Chrome.")
         return;
       }
-      if (isStreamLoading.value || !ffmpeg.loaded)
+      if (isStreamLoading.value)
       {
         return;
       }
@@ -605,7 +605,6 @@ export default {
 
     function monitorStreamStatus()
     {
-      return
       const vidRef = video.value.getVideoElem();
       if (!vidRef)
       {
