@@ -114,7 +114,7 @@
       </q-button>
 
       <q-button @click.prevent="toggleRecording">
-        <q-icon :name="isRecording ? 'stop_circle' : 'video_call'" :color="isRecording ? recordingBlinker : (isStreamLoading ? 'grey-9' : 'white')" size="2rem" />
+        <q-icon :name="isRecording ? 'stop_circle' : 'video_call'" :color="isRecording ? recordingBlinker : (isStreamLoading || !supportsMediaRecorder ? 'grey-9' : 'white')" size="2rem" />
       </q-button>
 
       <q-button @click="takeScreenShot">
@@ -221,10 +221,10 @@ export default {
     const interactionIdleTimeExpired = ref(false)
     const isFullscreen = ref(false)
     const isIOS = ref(true);//ref(navigator.platform.indexOf('iPhone') !== -1 || navigator.platform.indexOf('iPad') !== -1 || navigator.platform.indexOf('iPod') !== -1);
-    const supportsMediaRecorder = window.MediaRecorder !== undefined;
+    const supportsMediaRecorder = ref(window.MediaRecorder !== undefined);
 
     /*let ffmpeg;
-    if (!supportsMediaRecorder)
+    if (!supportsMediaRecorder.value)
     {
       ffmpeg = new FFmpeg();
       (async () => {
@@ -428,7 +428,7 @@ export default {
 
     function toggleRecording(event)
     {
-      if (!supportsMediaRecorder)
+      if (!supportsMediaRecorder.value)
       {
         //notifyWarning("Warning, this browser does not support native video recording. The resulting video may display lower quality or framerates")
         notifyWarning("Warning, this browser does not support native video recording. In order to record try updating the current browser or use a different browser such as Google Chrome.")
@@ -486,7 +486,7 @@ export default {
 
     function stopRecording()
     {
-      if (supportsMediaRecorder)
+      if (supportsMediaRecorder.value)
       {
         cancelAnimationFrame(canvasAnimationHandle)
         downloadVideo();
@@ -503,7 +503,7 @@ export default {
       let type;
       let stream;
 
-      if (!supportsMediaRecorder)
+      if (!supportsMediaRecorder.value)
       {
         options = { mimeType: "video/mp4" };
         type = "video/mp4";
@@ -574,7 +574,7 @@ export default {
     {
       let filename;
       let url;
-      if (supportsMediaRecorder)
+      if (supportsMediaRecorder.value)
       {
         let filename = `wildstream_${new Date().toISOString().replace(/\..+/, '').replace(/:/g, '-').replace(/T/, ':')}.webm`;
         mediaRecorder.stop()
@@ -762,6 +762,8 @@ export default {
       DEBUG_MODE,
       interactionIdleTimeExpired,
       isFullscreen,
+      isIOS,
+      supportsMediaRecorder,
 
       // Functions
       takeScreenShot,
