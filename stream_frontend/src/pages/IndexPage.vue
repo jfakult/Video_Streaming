@@ -5,7 +5,7 @@
     <div class="backdrop"></div>
 
     <div class="video-wrapper" ref="videoWrapper">
-      <CameraStream ref="video" :onplay="videoOnPlay" :onpause="videoOnPause" />
+      <CameraStream ref="video" :onplay="videoOnPlay" :onpause="videoOnPause" :controls="isFullscreen && isIOS" />
     </div>
 
     <!--
@@ -190,6 +190,8 @@
 import { ref, onMounted } from 'vue';
 import { useQuasar } from 'quasar';
 import CameraStream from '../components/CameraStream.vue';
+import { FFmpeg } from '@ffmpeg/ffmpeg';
+import { toBlobURL } from '@ffmpeg/util';
 
 export default {
   name: 'PageIndex',
@@ -218,12 +220,35 @@ export default {
     const streamLoadingBlinker = ref(false)
     const interactionIdleTimeExpired = ref(false)
     const isFullscreen = ref(false)
+    const isIOS = ref(true);//ref(navigator.platform.indexOf('iPhone') !== -1 || navigator.platform.indexOf('iPad') !== -1 || navigator.platform.indexOf('iPod') !== -1);
+    const supportsMediaRecorder = false; // window.MediaRecorder !== undefined;
+
+    let ffmpeg;
+    if (!supportsMediaRecorder)
+    {
+      ffmpeg = new FFmpeg();
+      (async () => {
+        ffmpeg.on('log', ({ message }) => {
+            console.log(message);
+        });
+        if (!crossOriginIsolated) SharedArrayBuffer = ArrayBuffer;
+        await ffmpeg.load({
+          coreURL: new URL("js/ffmpeg-core.js", window.location.href).href,
+          wasmURL: new URL("js/ffmpeg-core.wasm", window.location.href).href,
+          workerURL: new URL("js/ffmpeg-core.worker.js", window.location.href).href,
+        });
+        console.log("FFmpeg loaded")
+        //await ffmpeg.load()
+      })();
+    }
 
     const DEBUG_MODE = ref(window.location.search.includes("debug") || window.location.search.includes("DEBUG"))
 
     let streamDidStart = false
     let lastVidTime = 0;
     let PAGE_LOAD_TIMEOUT = 5000;
+    let canvasRecorder;
+    let recordedVideoFrames = [];
     let mediaRecorder;
     let recordedBlob;
     let recordedChunks = [];
@@ -236,6 +261,10 @@ export default {
     let streamModeHandle = 0;
     let interactionTimeoutHandler = 0;
     let websocket;
+    // Canvas for drawing video frames, used for screenshots and video recordings
+    let frameCanvas = document.createElement('canvas');
+    let frameCanvasCtx = frameCanvas.getContext('2d');
+    let canvasAnimationHandle = 0;
 
     /*
     // This should be handled by monitorStreamStatus()
@@ -254,9 +283,27 @@ export default {
       $q.notify({
           type: 'negative',
           position: 'top',
-          message: msg ? msg : 'Something went wrong, try refreshing the page'
+          message: msg ? msg : 'Something went wrong, try refreshing the page',
+          timeout: 8000,
+          actions: [
+            { icon: 'close', color: 'white', round: true, handler: () => { /* ... */ } }
+          ]
       })
       console.log("Sending error message: " + msg)
+    }
+
+    function notifyWarning(msg)
+    {
+      $q.notify({
+          type: 'warning',
+          position: 'top',
+          message: msg ? msg : 'Something went wrong, try refreshing the page',
+          timeout: 8000,
+          actions: [
+            { icon: 'close', color: 'white', round: true, handler: () => { /* ... */ } }
+          ]
+      })
+      console.log("Sending warning message: " + msg)
     }
 
     function setupWebSocket()
@@ -338,6 +385,16 @@ export default {
       }
     }
 
+    function drawVideoFrameToCanvas()
+    {
+      // Set the canvas dimensions to the video dimensions
+      frameCanvas.width = video.value.getVideoElem().videoWidth;
+      frameCanvas.height = video.value.getVideoElem().videoHeight;
+
+      // Draw the video frame to the canvas
+      frameCanvasCtx.drawImage(video.value.getVideoElem(), 0, 0, frameCanvas.width, frameCanvas.height);
+    }
+
     function takeScreenShot(event)
     {
       event.stopPropagation();
@@ -349,18 +406,11 @@ export default {
       }
 
       settings.value = true
-      let canvas = document.createElement('canvas');
-
-      // Set the canvas dimensions to the video dimensions
-      canvas.width = video.value.getVideoElem().videoWidth;
-      canvas.height = video.value.getVideoElem().videoHeight;
-
-      // Draw the video frame to the canvas
-      let ctx = canvas.getContext('2d');
-      ctx.drawImage(video.value.getVideoElem(), 0, 0, canvas.width, canvas.height);
+      
+      drawVideoFrameToCanvas();
 
       // Convert the canvas to a data URL
-      let dataURL = canvas.toDataURL('image/png');
+      let dataURL = frameCanvas.toDataURL('image/png', 1);
 
       // Create a link element, set the download attribute with a filename
       const date = new Date();
@@ -377,7 +427,7 @@ export default {
 
     function toggleRecording(event)
     {
-      if (isStreamLoading.value)
+      if ((isStreamLoading.value || ffmpeg.loaded) && false)
       {
         return;
       }
@@ -390,11 +440,12 @@ export default {
 
       if (isRecording.value)
       {
+        recordedVideoFrames = [];
         startRecording()
       }
       else
       {
-        mediaRecorder.stop()
+        stopRecording()
       }
     }
 
@@ -426,12 +477,46 @@ export default {
       }
     }*/
 
+    function stopRecording()
+    {
+      if (supportsMediaRecorder)
+      {
+        cancelAnimationFrame(canvasAnimationHandle)
+        downloadVideo();
+      }
+      else
+      {
+        mediaRecorder.stop();
+      }
+    }
+
     function startRecording()
     {
-      const options = { mimeType: "video/webm; codecs=vp9" };
-      console.log(video.value.getVideoElem())
-      const stream = video.value.getVideoElem().captureStream(); // This captures the stream from the video element
-      mediaRecorder = new MediaRecorder(stream, options);
+      let options;
+      let type;
+      let stream;
+
+      if (!supportsMediaRecorder)
+      {
+        notifyWarning("Warning, this browser does not support native video recording. The resulting video may display lower quality or framerates")
+        options = { mimeType: "video/mp4" };
+        type = "video/mp4";
+        function step() {
+          drawVideoFrameToCanvas();
+          recordedVideoFrames.push(frameCanvas.toDataURL('image/jpeg', 0.9));
+          canvasAnimationHandle = window.requestAnimationFrame(step);
+        }
+        canvasAnimationHandle = window.requestAnimationFrame(step);
+        stream = frameCanvas.captureStream();
+      }
+      else
+      {
+        options = { mimeType: "video/webm; codecs=vp9" };
+        type = "video/webm";
+        stream = video.value.getVideoElem().captureStream(); // This captures the stream from the video element
+      }
+
+      mediaRecorder = new MediaRecorder(stream);
 
       mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
@@ -457,15 +542,48 @@ export default {
       }
     }
 
+    async function compileVideo(filename) {
+      for (let i = 0; i < recordedVideoFrames.length; i++) {
+        const frame = recordedVideoFrames[i];
+        const response = await fetch(frame);
+        const blob = await response.blob();
+        const arrayBuffer = await blob.arrayBuffer();
+        const uint8Array = new Uint8Array(arrayBuffer);
+        await ffmpeg.writeFile(`frame${i}.jpeg`, uint8Array);
+      }
+
+      // Example FFmpeg command to compile frames into a video
+      console.log(['-framerate', '30', '-i', 'frame%d.jpeg', '-c:v', 'libx264', filename])
+      await ffmpeg.exec(['-framerate', '30', '-i', 'frame%d.jpeg', '-c:v', 'libx264', filename]);
+
+
+      const data = await ffmpeg.readFile(filename);
+      const videoBlob = new Blob([data.buffer], { type: 'video/mp4' });
+      const url = URL.createObjectURL(videoBlob);
+      
+      // You can now use 'url' as the source for a video element or create a download link
+    }
+
     function downloadVideo()
     {
-      mediaRecorder.stop()
-      const url = URL.createObjectURL(recordedBlob);
+      let filename;
+      let url;
+      if (supportsMediaRecorder)
+      {
+        let filename = `wildstream_${new Date().toISOString().replace(/\..+/, '').replace(/:/g, '-').replace(/T/, ':')}.webm`;
+        mediaRecorder.stop()
+        url = URL.createObjectURL(recordedBlob);
+      }
+      else
+      {
+        let filename = `wildstream_${new Date().toISOString().replace(/\..+/, '').replace(/:/g, '-').replace(/T/, ':')}.mp4`;
+        url = compileVideo(filename)
+      }
+
       const a = document.createElement("a");
       document.body.appendChild(a);
       a.style = "display: none";
       a.href = url;
-      const filename = `wildstream_${new Date().toISOString().replace(/\..+/, '').replace(/:/g, '-').replace(/T/, ':')}.webm`;
       a.download = filename;
       a.click();
       window.URL.revokeObjectURL(url);
@@ -481,6 +599,7 @@ export default {
 
     function monitorStreamStatus()
     {
+      return
       const vidRef = video.value.getVideoElem();
       if (!vidRef)
       {
@@ -531,12 +650,22 @@ export default {
 
     function openFullscreen() {
       const elem = document.documentElement;
-      if (elem.requestFullscreen) {
-        elem.requestFullscreen();
-      } else if (elem.webkitRequestFullscreen) { /* Safari */
-        elem.webkitRequestFullscreen();
-      } else if (elem.msRequestFullscreen) { /* IE11 */
-        elem.msRequestFullscreen();
+      const videoElem = video.value.getVideoElem();
+
+      if (isIOS.value)
+      {
+        videoElem.webkitEnterFullscreen();
+        return;
+      }
+      else
+      {
+        if (elem.requestFullscreen) {
+          elem.requestFullscreen();
+        } else if (elem.webkitRequestFullscreen) { /* Safari */
+          elem.webkitRequestFullscreen();
+        } else if (elem.msRequestFullscreen) { /* IE11 */
+          elem.msRequestFullscreen();
+        }
       }
     }
 
@@ -571,7 +700,7 @@ export default {
 
     onMounted(() => {
       // EDIT AS NEEDED
-      setupWebSocket();
+      //setupWebSocket();
 
       setInterval(monitorStreamStatus, STREAM_MONITOR_INTERVAL)
 
@@ -584,6 +713,25 @@ export default {
           notifyError("Failed to reach the camera. The camera stream may be down.")
         }
       }, PAGE_LOAD_TIMEOUT);
+
+      video.value.getVideoElem().addEventListener("fullscreenchange", function () {
+        if (!document.fullscreen)
+        {
+          isFullscreen.value = false
+        }
+      }, false);
+      video.value.getVideoElem().addEventListener("mozfullscreenchange", function () {
+          if (!document.mozIsFullScreen)
+          {
+            isFullscreen.value = false
+          }
+      }, false);
+      video.value.getVideoElem().addEventListener("webkitfullscreenchange", function () {
+          if (!document.webkitIsFullScreen)
+          {
+            isFullscreen.value = false
+          }
+      }, false);
     });
 
     return {
@@ -625,6 +773,10 @@ export default {
 };
 </script>
 <style scoped>
+html {
+  position: fixed;
+}
+
 .backdrop {
   position: absolute;
   width: 100vw;
