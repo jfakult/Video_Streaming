@@ -49,8 +49,7 @@
         <q-popup-proxy
           ref="helpPopup"
           @show="voidIdleTimer"
-          @hide="resetIdleTimer"
-          style="max-height: 80vh !important;">
+          @hide="resetIdleTimer">
           <q-banner>
             <!--<template v-slot:avatar>
               <q-icon name="help" color="color-dark-background" />
