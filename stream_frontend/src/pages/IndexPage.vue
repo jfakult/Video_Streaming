@@ -576,13 +576,13 @@ export default {
       let url;
       if (supportsMediaRecorder.value)
       {
-        let filename = `wildstream_${new Date().toISOString().replace(/\..+/, '').replace(/:/g, '-').replace(/T/, ':')}.webm`;
+        filename = `wildstream_${new Date().toISOString().replace(/\..+/, '').replace(/:/g, '-').replace(/T/, ':')}.webm`;
         mediaRecorder.stop()
         url = URL.createObjectURL(recordedBlob);
       }
       else
       {
-        let filename = `wildstream_${new Date().toISOString().replace(/\..+/, '').replace(/:/g, '-').replace(/T/, ':')}.mp4`;
+        filename = `wildstream_${new Date().toISOString().replace(/\..+/, '').replace(/:/g, '-').replace(/T/, ':')}.mp4`;
         url = compileVideo(filename)
       }
 
