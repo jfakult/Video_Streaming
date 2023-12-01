@@ -363,9 +363,6 @@
 </script>
   
 <style scoped>
-  #camera-stream-container {
-    /* Add styles for your video container here */
-  }
   #video {
     /* Add styles for your video element here */
     width: 100%;
