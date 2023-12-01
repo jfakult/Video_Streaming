@@ -17,7 +17,7 @@
     data() {
       return {
         // EDIT AS NEEDED
-        restartPause: 50000,
+        restartPause: 1000,
         pc: null,
         restartTimeout: null,
         eTag: '',
