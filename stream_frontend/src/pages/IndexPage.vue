@@ -377,6 +377,7 @@ export default {
 
     function toggleRecording(event)
     {
+      console.log("Toggling recording", "Is recording: ", isRecording.value, "Is stream loading: ", isStreamLoading.value)
       if (isStreamLoading.value)
       {
         return;
@@ -447,7 +448,14 @@ export default {
         downloadVideo();
       };
 
-      mediaRecorder.start();
+      try
+      {
+        mediaRecorder.start();
+      }
+      catch (e)
+      {
+        console.log("Failed to start recording: ", e)
+      }
     }
 
     function downloadVideo()
@@ -633,7 +641,7 @@ export default {
   height: 100vh;
   top: 0;
   left: 0;
-  z-index: 100;
+  z-index: 1;
   border: 4px solid red;
   border-radius: 4px;
 }
@@ -694,7 +702,7 @@ export default {
 }
 
 .controls-container {
-  z-index: 1;
+  z-index: 2;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
