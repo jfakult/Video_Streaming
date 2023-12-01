@@ -316,7 +316,7 @@ export default {
         if (data.message_type == "stream_mode")
         {
           clearInterval(streamModeHandle)
-          isStreamingMode.value = data.data == "wifi" ? true : false;
+          isStreamingMode.value = data.data == "stream" ? true : false;
           //streamControlIcon.value = data.data == "wifi" ? "wifi" : "smart_display";
         }
         /*
@@ -377,7 +377,6 @@ export default {
 
     function toggleRecording(event)
     {
-      console.log("Toggling recording", "Is recording: ", isRecording.value, "Is stream loading: ", isStreamLoading.value)
       if (isStreamLoading.value)
       {
         return;

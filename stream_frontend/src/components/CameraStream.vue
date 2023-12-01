@@ -367,6 +367,9 @@
     /* Add styles for your video element here */
     width: 100%;
     height: auto;
+    top: 50%;
+    transform: translateY(-50%);
+    position: absolute;
   }
 </style>
   
