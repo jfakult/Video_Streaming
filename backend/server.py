@@ -31,11 +31,10 @@ class ScopeServer:
                 await websocket.send(json.dumps(response))
 
             if message_type == "stream_mode":
-                print("Setting stream mode")
                 mode = data["data"]
                 response = {"message_type": "stream_mode", "data": mode}
 
-                if mode == "screen":
+                if mode == "scope":
                     subprocess.Popen(['sh', '/home/pi/Video_Streaming/scripts/screen.sh'])
                 else: # mode == "wifi"
                     subprocess.Popen(['sh', '/home/pi/Video_Streaming/scripts/stream.sh'])
@@ -57,7 +56,7 @@ class ScopeServer:
 
 if __name__ == "__main__":
     print("Starting streaming service")
-    subprocess.Popen(['sh', '/home/pi/Video_Streaming/scripts/stream.sh'])
+    subprocess.Popen(['sh', '/home/pi/Video_Streaming/scripts/screen.sh'])
     
     server = ScopeServer()
 
