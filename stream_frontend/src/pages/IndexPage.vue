@@ -208,7 +208,7 @@ export default {
     const settings = ref(null);
     const helpPopup = ref(null);
     //const qualityControl = ref(null);
-    const streamModeControl = ref("stream");
+    const streamModeControl = ref("scope");
     //const qualityControlIcon = ref("speed");
     //const streamControlIcon = ref("wifi")
     const isRecording = ref(false);
@@ -323,6 +323,10 @@ export default {
         // Ping pong, most browsers time out the websocket at 1 minute
         clearInterval(socketPingHandle)
         socketPingHandle = setInterval(() => { websocket.send("ping") }, 29 * 1000)
+
+        // Add this?
+        //streamModeControl.value = "stream"
+        //toggleStreamMode("stream") 
       };
       
       websocket.onmessage = handleWebSocketMessage;
