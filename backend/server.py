@@ -1,4 +1,5 @@
 import json
+import time
 import asyncio
 import websockets
 import subprocess
@@ -56,6 +57,10 @@ class ScopeServer:
 
 if __name__ == "__main__":
     print("Starting streaming service")
+    logo = subprocess.Popen(['sh', '/home/pi/Video_Streaming/scripts/logo.sh'])
+    time.sleep(1)
+    logo.terminate()
+    print("terminated logo")
     subprocess.Popen(['sh', '/home/pi/Video_Streaming/scripts/screen.sh'])
     
     server = ScopeServer()
