@@ -136,7 +136,7 @@
     </div>
 
     <!-- The stream is loading -->
-    <q-inner-loading :showing="isStreamLoading"
+    <q-inner-loading :showing="isStreamLoading && isStreamingMode"
                      transition-duration="2000"
                      transition-show="none"
                      :class="splashLoading ? 'dark-background' : ''">
@@ -214,12 +214,12 @@ export default {
     const isRecording = ref(false);
     const recordingBlinker = ref("red")
     const recordingIndicator = ref(null);
-    const isStreamingMode = ref(true);
+    const isStreamingMode = ref(false);
     const isStreamLoading = ref(true)
     const streamLoadingBlinker = ref(false)
     const interactionIdleTimeExpired = ref(false)
     const isFullscreen = ref(false)
-    const isIOS = ref(true);//ref(navigator.platform.indexOf('iPhone') !== -1 || navigator.platform.indexOf('iPad') !== -1 || navigator.platform.indexOf('iPod') !== -1);
+    const isIOS = ref(navigator.platform.indexOf('iPhone') !== -1 || navigator.platform.indexOf('iPad') !== -1 || navigator.platform.indexOf('iPod') !== -1);
     const supportsMediaRecorder = ref(window.MediaRecorder !== undefined);
 
     /*let ffmpeg;
@@ -716,7 +716,7 @@ export default {
       setTimeout(() => {
         splashLoading.value = false;
 
-        if (!streamDidStart)
+        if (!streamDidStart && isStreamingMode.value)
         {
           notifyError("Failed to reach the camera. The camera stream may be down.")
         }
