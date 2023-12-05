@@ -78,11 +78,11 @@ class ScopeServer:
 
 if __name__ == "__main__":
     print("Starting streaming service")
-    logo = subprocess.Popen(['sh', '{ROOT_PATH}/scripts/logo.sh'])
+    logo = subprocess.Popen(['sh', f'{ROOT_PATH}/scripts/logo.sh'])
     time.sleep(1)
     logo.terminate()
     print("terminated logo")
-    subprocess.Popen(['sh', '{ROOT_PATH}/scripts/screen.sh'])
+    subprocess.Popen(['sh', f'{ROOT_PATH}/scripts/screen.sh'])
     
     server = ScopeServer()
 

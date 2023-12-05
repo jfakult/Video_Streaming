@@ -339,7 +339,7 @@ export default {
     {
       var url = new URL('/control', window.location.href);
       // EDIT AS NEEDED
-      url.protocol = url.protocol.replace('http', 'wss');
+      url.protocol = url.protocol.replace('http', 'ws');
       //url.protocol = url.protocol.replace('https', 'wss');
       websocket = new WebSocket(url.href);
       
