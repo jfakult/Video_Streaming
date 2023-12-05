@@ -5,7 +5,13 @@
     <div class="backdrop"></div>
 
     <div class="video-wrapper" ref="videoWrapper">
+      <!-- EDIT AS NEEDED -->
+      <!--
       <CameraStream ref="video" :onplay="videoOnPlay" :onpause="videoOnPause" :controls="isFullscreen && isIOS" />
+      -->
+      <video ref="video" class="fullscreen-video" controls playsinline autoplay muted loop>
+        <source src="video/sample-5s.mp4" type="video/mp4">
+      </video>
     </div>
 
     <!--
@@ -113,11 +119,25 @@
       </q-button>
 
       <q-button @click.prevent="toggleRecording">
-        <q-icon :name="isRecording ? 'stop_circle' : 'video_call'" :color="isRecording ? recordingBlinker : (isStreamLoading || !supportsMediaRecorder ? 'grey-9' : 'white')" size="2rem" />
+        <q-icon :style="isVideoDownloading ? 'visibility: hidden' : ''" :name="isRecording ? 'stop_circle' : 'video_call'" :color="isRecording ? recordingBlinker : (isStreamLoading || !supportsMediaRecorder ? 'grey-9' : 'white')" size="2rem" />
+        <q-spinner-oval
+              :style="isVideoDownloading ? '' : 'display: none;'"
+              color="grey-6"
+              size="2rem"
+              thickness="2"
+              class="absolute center-spinner"
+            />
       </q-button>
 
       <q-button @click="takeScreenShot">
-        <q-icon name="add_a_photo" :color="isStreamLoading ? 'grey-9' : 'white'" size="2rem" />
+        <q-icon :style="isPhotoDownloading ? 'visibility: hidden' : ''" name="add_a_photo" :color="isStreamLoading ? 'grey-7' : 'white'" size="2rem" />
+        <q-spinner-oval
+            :style="isPhotoDownloading ? '' : 'display: none;'"
+            color="grey-6"
+            size="2rem"
+            thickness="2"
+            class="absolute center-spinner"
+          />
       </q-button>
       <!-- Vestigial features
       <q-fab v-model="qualityControl"
@@ -154,10 +174,10 @@
 
     </q-inner-loading>
 
-    <q-inner-loading id="screenMode" :showing="!isStreamingMode" transition-duration="2000" transition-show="none">
+    <q-inner-loading id="screenMode" :showing="!isStreamLoading && !isStreamingMode" transition-duration="2000" transition-show="none">
         <q-img src="icons/Wildstream_logo.png" class="logo-size absolute" />
 
-        <div class="absolute text-white big-font" style="">The stream has been<br>redirected to the scope</div>
+        <div class="absolute text-white big-font">The stream has been<br>redirected to the scope</div>
 
         <!-- Disable the default spinner by creating an empty one -->
         <q-spinner size="0vw" thickness="0" class="absolute"/>
@@ -189,14 +209,17 @@
 import { ref, onMounted } from 'vue';
 import { useQuasar } from 'quasar';
 import CameraStream from '../components/CameraStream.vue';
+/*
 import { FFmpeg } from '@ffmpeg/ffmpeg';
 import { toBlobURL } from '@ffmpeg/util';
+*/
 
 export default {
   name: 'PageIndex',
 
   components: {
-    CameraStream,
+    // EDIT AS NEEDED
+    //CameraStream,
   },
 
   setup() {
@@ -205,15 +228,16 @@ export default {
     const videoWrapper = ref(null);
     const video = ref(null);
     const splashLoading = ref(true); // probably don't need this anymore
-    const settings = ref(null);
     const helpPopup = ref(null);
     //const qualityControl = ref(null);
-    const streamModeControl = ref("scope");
+    const streamModeControl = ref("");
     //const qualityControlIcon = ref("speed");
     //const streamControlIcon = ref("wifi")
     const isRecording = ref(false);
     const recordingBlinker = ref("red")
     const recordingIndicator = ref(null);
+    const isPhotoDownloading = ref(false);
+    const isVideoDownloading = ref(false);
     const isStreamingMode = ref(false);
     const isStreamLoading = ref(true)
     const streamLoadingBlinker = ref(false)
@@ -221,6 +245,8 @@ export default {
     const isFullscreen = ref(false)
     const isIOS = ref(navigator.platform.indexOf('iPhone') !== -1 || navigator.platform.indexOf('iPad') !== -1 || navigator.platform.indexOf('iPod') !== -1);
     const supportsMediaRecorder = ref(window.MediaRecorder !== undefined);
+
+    notifyWarning("System Platform: " + navigator.platform + "\n" + "User Agent: " + navigator.userAgent + "\n" + "Is iOS: " + isIOS.value + "\n" + "Supports Media Recorder: " + supportsMediaRecorder.value)
 
     /*let ffmpeg;
     if (!supportsMediaRecorder.value)
@@ -252,7 +278,9 @@ export default {
     let mediaRecorder;
     let recordedBlob;
     let recordedChunks = [];
+    let videoRef;
 
+    let gotWebsocketInitMessage = false;
     const SERVER_COMMUNICATION_TIMEOUT = 1000; // If the server doesn't respond in this time, show an error
     const STREAM_MONITOR_INTERVAL = 500;      // The rate at which we check if the stream is loading
     const WEBSOCKET_RESTART_INTERVAL = 1000;   // The rate at which we attempt to reconnect to the websocket
@@ -298,7 +326,8 @@ export default {
           type: 'warning',
           position: 'top',
           message: msg ? msg : 'Something went wrong, try refreshing the page',
-          timeout: 8000,
+        timeout: 8000,
+          multiLine: true,
           actions: [
             { icon: 'close', color: 'white', round: true, handler: () => { /* ... */ } }
           ]
@@ -309,7 +338,9 @@ export default {
     function setupWebSocket()
     {
       var url = new URL('/control', window.location.href);
-      url.protocol = url.protocol.replace('http', 'ws');
+      // EDIT AS NEEDED
+      //url.protocol = url.protocol.replace('http', 'wss');
+      url.protocol = url.protocol.replace('https', 'wss');
       websocket = new WebSocket(url.href);
       
       websocket.onopen = () => {
@@ -366,8 +397,10 @@ export default {
 
         if (data.message_type == "stream_mode")
         {
+          gotWebsocketInitMessage = true;
           clearInterval(streamModeHandle)
           isStreamingMode.value = data.data == "stream" ? true : false;
+          streamModeControl.value = data.data == "stream" ? "stream" : "scope";
           //streamControlIcon.value = data.data == "wifi" ? "wifi" : "smart_display";
         }
         /*
@@ -392,11 +425,11 @@ export default {
     function drawVideoFrameToCanvas()
     {
       // Set the canvas dimensions to the video dimensions
-      frameCanvas.width = video.value.getVideoElem().videoWidth;
-      frameCanvas.height = video.value.getVideoElem().videoHeight;
+      frameCanvas.width = videoRef.videoWidth;
+      frameCanvas.height = videoRef.videoHeight;
 
       // Draw the video frame to the canvas
-      frameCanvasCtx.drawImage(video.value.getVideoElem(), 0, 0, frameCanvas.width, frameCanvas.height);
+      frameCanvasCtx.drawImage(videoRef, 0, 0, frameCanvas.width, frameCanvas.height);
     }
 
     function takeScreenShot(event)
@@ -404,12 +437,12 @@ export default {
       event.stopPropagation();
       event.preventDefault();
 
-      if (isStreamLoading.value)
+      if (isStreamLoading.value || isPhotoDownloading.value)
       {
         return;
       }
 
-      settings.value = true
+      isPhotoDownloading.value = true;
       
       drawVideoFrameToCanvas();
 
@@ -427,6 +460,7 @@ export default {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      isPhotoDownloading.value = false;
     }
 
     function toggleRecording(event)
@@ -437,16 +471,18 @@ export default {
         notifyWarning("Warning, this browser does not support native video recording. In order to record try updating the current browser or use a different browser such as Google Chrome.")
         return;
       }
-      if (isStreamLoading.value)
+      if (isStreamLoading.value || isVideoDownloading.value)
       {
         return;
       }
 
       isRecording.value = !isRecording.value;
 
-      event.stopPropagation();
-      event.preventDefault();
-      settings.value = true
+      if (event)
+      {
+        event.stopPropagation();
+        event.preventDefault();
+      }
 
       if (isRecording.value)
       {
@@ -489,7 +525,7 @@ export default {
 
     function stopRecording()
     {
-      if (supportsMediaRecorder.value)
+      if (!supportsMediaRecorder.value)
       {
         cancelAnimationFrame(canvasAnimationHandle)
         downloadVideo();
@@ -522,7 +558,7 @@ export default {
       {
         options = { mimeType: "video/webm; codecs=vp9" };
         type = "video/webm";
-        stream = video.value.getVideoElem().captureStream(); // This captures the stream from the video element
+        stream = videoRef.captureStream(); // This captures the stream from the video element
       }
 
       mediaRecorder = new MediaRecorder(stream);
@@ -575,6 +611,7 @@ export default {
 
     function downloadVideo()
     {
+      isVideoDownloading.value = true;
       let filename;
       let url;
       if (supportsMediaRecorder.value)
@@ -597,6 +634,7 @@ export default {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
+      isVideoDownloading.value = false;
     }
 
     function videoOnPlay() {
@@ -608,13 +646,12 @@ export default {
 
     function monitorStreamStatus()
     {
-      const vidRef = video.value.getVideoElem();
-      if (!vidRef)
+      if (!videoRef || !gotWebsocketInitMessage)
       {
         return;
       }
 
-      const vidTime = vidRef.currentTime;
+      const vidTime = videoRef.currentTime;
 
       if (vidTime > lastVidTime)
       {
@@ -641,7 +678,6 @@ export default {
     {
       interactionIdleTimeExpired.value = false
       clearInterval(interactionTimeoutHandler)
-      console.log(interactionIdleTimeExpired.value)
     }
 
     function resetIdleTimer()
@@ -658,11 +694,10 @@ export default {
 
     function openFullscreen() {
       const elem = document.documentElement;
-      const videoElem = video.value.getVideoElem();
 
       if (isIOS.value)
       {
-        videoElem.webkitEnterFullscreen();
+        videoRef.webkitEnterFullscreen();
         return;
       }
       else
@@ -710,6 +745,9 @@ export default {
       // EDIT AS NEEDED
       setupWebSocket();
 
+      //videoRef = video.value.getVideoElem();
+      videoRef = video.value;
+
       setInterval(monitorStreamStatus, STREAM_MONITOR_INTERVAL)
 
       // If the stream never loads eventually, signal to the user that something went wrong
@@ -722,19 +760,19 @@ export default {
         }
       }, PAGE_LOAD_TIMEOUT);
 
-      video.value.getVideoElem().addEventListener("fullscreenchange", function () {
+      videoRef.addEventListener("fullscreenchange", function () {
         if (!document.fullscreen)
         {
           isFullscreen.value = false
         }
       }, false);
-      video.value.getVideoElem().addEventListener("mozfullscreenchange", function () {
+      videoRef.addEventListener("mozfullscreenchange", function () {
           if (!document.mozIsFullScreen)
           {
             isFullscreen.value = false
           }
       }, false);
-      video.value.getVideoElem().addEventListener("webkitfullscreenchange", function () {
+      videoRef.addEventListener("webkitfullscreenchange", function () {
           if (!document.webkitIsFullScreen)
           {
             isFullscreen.value = false
@@ -746,7 +784,6 @@ export default {
       // Element References
       videoWrapper,
       video,
-      settings,
       //qualityControl,
       streamModeControl,
       recordingIndicator,
@@ -766,6 +803,8 @@ export default {
       isFullscreen,
       isIOS,
       supportsMediaRecorder,
+      isPhotoDownloading,
+      isVideoDownloading,
 
       // Functions
       takeScreenShot,
@@ -832,7 +871,7 @@ html {
 .fullscreen-video {
   position: absolute;
   width: 100vw;
-  z-index: -100;
+  /*z-index: -100;*/
   background: no-repeat;
   background-size: cover;
   transform-origin: top left;
@@ -887,7 +926,7 @@ html {
 
 .big-font {
   /* Place halfway plus size of spinner */
-  top: calc(50vh - 7.5vw - 12.5vh - 54px);
+  top: calc(50vh - 7.5vw - 12.5vh - 72px);
   font-size: 18px;
   text-align: center;
 }
@@ -967,5 +1006,11 @@ q-button {
   margin: 8px;
   vertical-align: middle;
   display: inline-block;
+}
+
+.center-spinner {
+  left: 0;
+  right: 0;
+  margin: auto;
 }
 </style>
