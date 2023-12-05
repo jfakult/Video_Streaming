@@ -16,7 +16,6 @@
 
     data() {
       return {
-        // EDIT AS NEEDED
         restartPause: 1000,
         pc: null,
         restartTimeout: null,
@@ -351,7 +350,8 @@
     mounted() {
       this.$refs.videoElement.onplay = this.onplay
       this.$refs.videoElement.onpause = this.onpause
-      this.start();
+      // EDIT AS NEEDED
+      // this.start();
     },
     beforeUnmount() {
       if (this.pc !== null) {
