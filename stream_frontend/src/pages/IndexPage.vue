@@ -6,12 +6,12 @@
 
     <div class="video-wrapper" ref="videoWrapper">
       <!-- EDIT AS NEEDED -->
-      <!--
       <CameraStream ref="video" :onplay="videoOnPlay" :onpause="videoOnPause" :controls="isFullscreen && isIOS" />
-      -->
-      <video ref="video" class="fullscreen-video" controls playsinline autoplay muted loop>
+
+      <!--<video ref="video" class="fullscreen-video" controls playsinline autoplay muted loop>
         <source src="video/sample-5s.mp4" type="video/mp4">
       </video>
+      -->
     </div>
 
     <!--
@@ -219,7 +219,7 @@ export default {
 
   components: {
     // EDIT AS NEEDED
-    //CameraStream,
+    CameraStream,
   },
 
   setup() {
@@ -339,8 +339,8 @@ export default {
     {
       var url = new URL('/control', window.location.href);
       // EDIT AS NEEDED
-      //url.protocol = url.protocol.replace('http', 'wss');
-      url.protocol = url.protocol.replace('https', 'wss');
+      url.protocol = url.protocol.replace('http', 'wss');
+      //url.protocol = url.protocol.replace('https', 'wss');
       websocket = new WebSocket(url.href);
       
       websocket.onopen = () => {
@@ -745,8 +745,8 @@ export default {
       // EDIT AS NEEDED
       setupWebSocket();
 
-      //videoRef = video.value.getVideoElem();
-      videoRef = video.value;
+      videoRef = video.value.getVideoElem();
+      //videoRef = video.value;
 
       setInterval(monitorStreamStatus, STREAM_MONITOR_INTERVAL)
 

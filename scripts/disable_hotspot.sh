@@ -11,4 +11,4 @@ rm /etc/default/hostapd.conf
 cp $BASE/config/wpa_supplicant_default.conf /etc/wpa_supplicant/wpa_supplicant.conf
 
 systemctl enable wpa_supplicant
-systemctl stop hostapd
+systemctl disable hostapd
