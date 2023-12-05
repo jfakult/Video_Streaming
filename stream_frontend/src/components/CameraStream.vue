@@ -351,7 +351,7 @@
       this.$refs.videoElement.onplay = this.onplay
       this.$refs.videoElement.onpause = this.onpause
       // EDIT AS NEEDED
-      // this.start();
+      this.start();
     },
     beforeUnmount() {
       if (this.pc !== null) {

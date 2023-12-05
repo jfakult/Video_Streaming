@@ -6,8 +6,8 @@ import websockets
 import subprocess
 
 # EDIT AS NEEDED
-#SERVER_PORT = 9000
-SERVER_PORT = 10020
+SERVER_PORT = 9000
+#SERVER_PORT = 10020
 ROOT_PATH = "/home/pi/Video_Streaming"
 #ROOT_PATH = "~/webapps/Video_Streaming"
 
