@@ -130,7 +130,7 @@
       </q-button>
 
       <q-button @click="takeScreenShot">
-        <q-icon :style="isPhotoDownloading ? 'visibility: hidden' : ''" name="add_a_photo" :color="isStreamLoading ? 'grey-7' : 'white'" size="2rem" />
+        <q-icon :style="isPhotoDownloading ? 'visibility: hidden' : ''" name="add_a_photo" :color="isStreamLoading ? 'grey-9' : 'white'" size="2rem" />
         <q-spinner-oval
             :style="isPhotoDownloading ? '' : 'display: none;'"
             color="grey-6"
@@ -174,7 +174,7 @@
 
     </q-inner-loading>
 
-    <q-inner-loading id="screenMode" :showing="!isStreamLoading && !isStreamingMode" transition-duration="2000" transition-show="none">
+    <q-inner-loading id="screenMode" :showing="!isStreamingMode" transition-duration="2000" transition-show="none">
         <q-img src="icons/Wildstream_logo.png" class="logo-size absolute" />
 
         <div class="absolute text-white big-font">The stream has been<br>redirected to the scope</div>
@@ -238,7 +238,7 @@ export default {
     const recordingIndicator = ref(null);
     const isPhotoDownloading = ref(false);
     const isVideoDownloading = ref(false);
-    const isStreamingMode = ref(false);
+    const isStreamingMode = ref(true);
     const isStreamLoading = ref(true)
     const streamLoadingBlinker = ref(false)
     const interactionIdleTimeExpired = ref(false)
@@ -270,7 +270,7 @@ export default {
 
     const DEBUG_MODE = ref(window.location.search.includes("debug") || window.location.search.includes("DEBUG"))
 
-    let streamDidStart = false
+    const streamDidStart = ref(false)
     let lastVidTime = 0;
     let PAGE_LOAD_TIMEOUT = 5000;
     let canvasRecorder;
@@ -655,7 +655,7 @@ export default {
 
       if (vidTime > lastVidTime)
       {
-        streamDidStart = true;
+        streamDidStart.value = true;
 
         isStreamLoading.value = false;
         // Only used so that we don't blink the "stream down" indicator on page load
@@ -754,7 +754,7 @@ export default {
       setTimeout(() => {
         splashLoading.value = false;
 
-        if (!streamDidStart && isStreamingMode.value)
+        if (!streamDidStart.value && isStreamingMode.value)
         {
           notifyError("Failed to reach the camera. The camera stream may be down.")
         }
@@ -805,6 +805,7 @@ export default {
       supportsMediaRecorder,
       isPhotoDownloading,
       isVideoDownloading,
+      streamDidStart,
 
       // Functions
       takeScreenShot,
