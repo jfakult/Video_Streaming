@@ -281,7 +281,7 @@ export default {
     let videoRef;
 
     let gotWebsocketInitMessage = false;
-    const SERVER_COMMUNICATION_TIMEOUT = 1000; // If the server doesn't respond in this time, show an error
+    const SERVER_COMMUNICATION_TIMEOUT = 3000; // If the server doesn't respond in this time, show an error
     const STREAM_MONITOR_INTERVAL = 500;      // The rate at which we check if the stream is loading
     const WEBSOCKET_RESTART_INTERVAL = 1000;   // The rate at which we attempt to reconnect to the websocket
     let socketPingHandle = 0;
@@ -398,7 +398,7 @@ export default {
         if (data.message_type == "stream_mode")
         {
           gotWebsocketInitMessage = true;
-          clearInterval(streamModeHandle)
+          clearTimeout(streamModeHandle);
           isStreamingMode.value = data.data == "stream" ? true : false;
           streamModeControl.value = data.data == "stream" ? "stream" : "scope";
           //streamControlIcon.value = data.data == "wifi" ? "wifi" : "smart_display";
