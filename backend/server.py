@@ -60,7 +60,7 @@ class ScopeServer:
             return
 
 
-    async def handler(self, websocket):
+    async def handler(self, websocket, path):
         print("Got websocket request!")
         websocket.uuid = uuid.uuid4()
         self.socket_connections[websocket.uuid] = websocket
