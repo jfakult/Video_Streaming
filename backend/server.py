@@ -56,7 +56,8 @@ class ScopeServer:
                 #await websocket.send(json.dumps(response))
             
         except:
-            websocket.send(f"Unknown message recieved: '{message}'")
+            print("Unknown message recieved: ", message)
+            await websocket.send(f"Unknown message recieved: '{message}'")
             return
 
 
