@@ -164,14 +164,11 @@
         this.pc.oniceconnectionstatechange = () => this.onConnectionState();
 
         this.pc.ontrack = (evt) => {
-          console.log("New track:", evt.track.kind);
-
           evt.track.onended = () =>
           {
             this.$refs.videoElement.pause()
           }
 
-          console.log(evt.streams)
           this.$refs.videoElement.srcObject = evt.streams[0];
           this.$refs.videoElement.muted = true;
           this.$refs.videoElement.play();
@@ -351,7 +348,7 @@
       this.$refs.videoElement.onplay = this.onplay
       this.$refs.videoElement.onpause = this.onpause
       // EDIT AS NEEDED
-      this.start();
+      //this.start();
     },
     beforeUnmount() {
       if (this.pc !== null) {
