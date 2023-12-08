@@ -12,6 +12,7 @@
         onplay: Function,
         onpause: Function,
         showControls: Boolean,
+        //needsRefreshing: Boolean,
     },
 
     data() {
@@ -300,7 +301,6 @@
       },
 
       scheduleRestart() {
-        console.log("Restarting... ", this.restartTimeout)
         if (this.restartTimeout !== null) {
           return;
         }
