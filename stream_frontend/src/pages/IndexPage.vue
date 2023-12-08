@@ -486,9 +486,9 @@ export default {
         return;
       }
 
-      notifyWarning("starting toggle")
-
       isRecording.value = !isRecording.value;
+      notifyWarning("starting toggle0")
+      notifyWarning("", event)
 
       if (event)
       {
@@ -496,6 +496,8 @@ export default {
         event.preventDefault();
       }
 
+      notifyWarning("starting toggle")
+      // Note these seem backwards, but we flip the bool above
       if (isRecording.value)
       {
         recordedVideoFrames = [];
