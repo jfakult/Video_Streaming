@@ -6,12 +6,12 @@
 
     <div class="video-wrapper" ref="videoWrapper">
       <!-- EDIT AS NEEDED -->
-      <CameraStream ref="video" :onplay="videoOnPlay" :onpause="videoOnPause" :controls="isFullscreen && isIOS" />
+      <!--<CameraStream ref="video" :onplay="videoOnPlay" :onpause="videoOnPause" :controls="isFullscreen && isIOS" />
+      -->
 
-      <!--<video ref="video" class="fullscreen-video" controls playsinline autoplay muted loop>
+      <video ref="video" class="fullscreen-video" controls playsinline autoplay muted loop>
         <source src="video/sample-5s.mp4" type="video/mp4">
       </video>
-      -->
     </div>
 
     <!--
@@ -219,7 +219,7 @@ export default {
 
   components: {
     // EDIT AS NEEDED
-    CameraStream,
+    //CameraStream,
   },
 
   setup() {
@@ -234,19 +234,19 @@ export default {
     //const qualityControlIcon = ref("speed");
     //const streamControlIcon = ref("wifi")
     const isRecording = ref(false);
-    const recordingBlinker = ref("red")
+    const recordingBlinker = ref("red");
     const recordingIndicator = ref(null);
     const isPhotoDownloading = ref(false);
     const isVideoDownloading = ref(false);
     const isStreamingMode = ref(true);
-    const isStreamLoading = ref(true)
-    const streamLoadingBlinker = ref(false)
-    const interactionIdleTimeExpired = ref(false)
-    const isFullscreen = ref(false)
-    const isIOS = ref(navigator.platform.indexOf('iPhone') !== -1 || navigator.platform.indexOf('iPad') !== -1 || navigator.platform.indexOf('iPod') !== -1);
+    const isStreamLoading = ref(true);
+    const streamLoadingBlinker = ref(false);
+    const interactionIdleTimeExpired = ref(false);
+    const isFullscreen = ref(false);
+    const isIOS = ref(detectIOS());
     const supportsMediaRecorder = ref(window.MediaRecorder !== undefined);
 
-    notifyWarning("System Platform: " + navigator.platform + "\n" + "User Agent: " + navigator.userAgent + "\n" + "Is iOS: " + isIOS.value + "\n" + "Supports Media Recorder: " + supportsMediaRecorder.value)
+    notifyWarning("Touch points:" + navigator.maxTouchPoints + "\nSystem Platform: " + navigator.platform + "\n" + "User Agent: " + navigator.userAgent + "\n" + "Is iOS: " + isIOS.value + "\n" + "Supports Media Recorder: " + supportsMediaRecorder.value)
 
     /*let ffmpeg;
     if (!supportsMediaRecorder.value)
@@ -335,12 +335,21 @@ export default {
       console.log("Sending warning message: " + msg)
     }
 
+    function detectIOS()
+    {
+      if (/iPad|iPhone|iPod/.test(navigator.platform)) {
+        return true;
+      } else { // iPad Pro reports itself as running MacOSX
+        return navigator.maxTouchPoints && (navigator.maxTouchPoints > 2) && /MacIntel/.test(navigator.platform)
+      }
+    }
+
     function setupWebSocket()
     {
       var url = new URL('/control', window.location.href);
       // EDIT AS NEEDED
-      url.protocol = url.protocol.replace('http', 'ws');
-      //url.protocol = url.protocol.replace('https', 'wss');
+      //url.protocol = url.protocol.replace('http', 'ws');
+      url.protocol = url.protocol.replace('https', 'wss');
       websocket = new WebSocket(url.href);
       
       websocket.onopen = () => {
@@ -743,10 +752,10 @@ export default {
 
     onMounted(() => {
       // EDIT AS NEEDED
-      setupWebSocket();
+      //setupWebSocket();
 
-      videoRef = video.value.getVideoElem();
-      //videoRef = video.value;
+      //videoRef = video.value.getVideoElem();
+      videoRef = video.value;
 
       setInterval(monitorStreamStatus, STREAM_MONITOR_INTERVAL)
 
