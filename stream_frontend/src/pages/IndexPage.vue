@@ -537,6 +537,7 @@ export default {
 
     function stopRecording()
     {
+      notifyWarning("stopping recording: " + supportsMediaRecorder.value)
       if (!supportsMediaRecorder.value)
       {
         cancelAnimationFrame(canvasAnimationHandle)
@@ -553,6 +554,8 @@ export default {
       let options;
       let type;
       let stream;
+
+      notifyWarning("starting recording: ")
 
       if (!supportsMediaRecorder.value)
       {
