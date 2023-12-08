@@ -486,6 +486,8 @@ export default {
         return;
       }
 
+      notifyWarning("starting toggle")
+
       isRecording.value = !isRecording.value;
 
       if (event)
@@ -621,9 +623,11 @@ export default {
 
     function downloadVideo()
     {
+      notifyWarning("starting download")
       isVideoDownloading.value = true;
       let filename;
       let url;
+      try {
       if (supportsMediaRecorder.value)
       {
         filename = `wildstream_${new Date().toISOString().replace(/\..+/, '').replace(/:/g, '-').replace(/T/, ':')}.webm`;
@@ -645,6 +649,7 @@ export default {
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
       isVideoDownloading.value = false;
+    } catch(e) { notifyWarning("Error downloading video: " + e) }
     }
 
     function videoOnPlay() {
