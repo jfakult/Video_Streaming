@@ -568,6 +568,7 @@ export default {
       let type;
       let stream;
 
+      notifyWarning("starting recording: ")
       if (!supportsMediaRecorder.value)
       {
         options = { mimeType: "video/mp4" };
@@ -587,7 +588,16 @@ export default {
         stream = videoRef.captureStream(); // This captures the stream from the video element
       }
 
-      mediaRecorder = new MediaRecorder(stream);
+      notifyWarning("creating media recorder")
+
+      try
+      {
+        mediaRecorder = new MediaRecorder(stream);
+      }
+      catch (e)
+      {
+        notifyWarning("Error creating media recorder: " + e.toString())
+      }
 
       mediaRecorder.addEventListener('dataavailable', (event) => {
         if (event.data.size > 0) {
