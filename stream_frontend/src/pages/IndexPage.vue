@@ -556,7 +556,7 @@ export default {
         }
         catch (e)
         {
-          notifyWarning("Error stopping media recorder: ")
+          notifyWarning("Error stopping media recorder: " + e.toString())
         }
         //mediaRecorder.onstop()
       }
