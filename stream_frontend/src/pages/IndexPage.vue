@@ -550,9 +550,15 @@ export default {
       else
       {
         notifyWarning("Calling stop on media recorder  ")
-        notifyWarning(mediaRecorder.state.toString())
-        //mediaRecorder.stop();
-        mediaRecorder.onstop()
+        try
+        {
+          mediaRecorder.stop();
+        }
+        catch (e)
+        {
+          notifyWarning("Error stopping media recorder: ")
+        }
+        //mediaRecorder.onstop()
       }
     }
 
