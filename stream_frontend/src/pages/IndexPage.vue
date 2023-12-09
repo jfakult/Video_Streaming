@@ -584,7 +584,7 @@ export default {
       else
       {
         notifyWarning("getting stream")
-        notifyWarning(videoRef.toString)
+        notifyWarning(videoRef.toString())
         options = { mimeType: "video/webm; codecs=vp9" };
         type = "video/webm";
         notifyWarning(videoRef.captureStream.toString())
