@@ -565,6 +565,8 @@ export default {
     function startRecording()
     {
       let stream;
+      let options;
+      let type;
 
       notifyWarning("starting recording: ")
       if (!supportsMediaRecorder.value)
@@ -581,6 +583,8 @@ export default {
       }
       else
       {
+        notifyWarning("getting stream")
+        notifyWarning(videoRef.toString)
         options = { mimeType: "video/webm; codecs=vp9" };
         type = "video/webm";
         notifyWarning(videoRef.captureStream.toString())
@@ -806,7 +810,7 @@ export default {
       setTimeout(() => {
         splashLoading.value = false;
 
-        if (!streamDidStart.value && isStreamingMode.value && gotResponseFromServer)
+        if (!streamDidStart.value && isStreamingMode.value && !gotResponseFromServer)
         {
           notifyError("Failed to reach the camera. The camera stream may be down.")
         }
