@@ -395,6 +395,7 @@ export default {
 
     function handleWebSocketMessage(event)
     {
+      gotResponseFromServer = true;
       if (event.data == "pong")
       {
         return;
@@ -405,10 +406,11 @@ export default {
       try {
         const data = JSON.parse(event.data);
 
+        clearTimeout(streamModeHandle);
+
         if (data.message_type == "stream_mode")
         {
           gotWebsocketInitMessage = true;
-          clearTimeout(streamModeHandle);
           isStreamingMode.value = data.data == "stream" ? true : false;
           streamModeControl.value = data.data == "stream" ? "stream" : "scope";
           //streamControlIcon.value = data.data == "wifi" ? "wifi" : "smart_display";
@@ -510,6 +512,7 @@ export default {
     {
       if (websocket && websocket.readyState === WebSocket.OPEN)
       {
+        gotResponseFromServer = false;
         websocket.send(JSON.stringify({ message_type: "stream_mode", data: mode }));
         streamModeHandle = setTimeout(() => { notifyError("The camera did not respond in time. Try waiting or refresh the screen.") }, SERVER_COMMUNICATION_TIMEOUT)
       }
@@ -544,7 +547,8 @@ export default {
       }
       else
       {
-        notifyWarning("Calling stop on media recorder  " + mediaRecorder.stop)
+        notifyWarning("Calling stop on media recorder  ")
+        notifyWarning(mediaRecorder.state)
         mediaRecorder.stop();
       }
     }
@@ -589,6 +593,10 @@ export default {
         });
         recordedChunks = []; // Clear the recorded chunks
         downloadVideo();
+      };
+
+      mediaRecorder.onerror = (e) => {
+        notifyWarning("Error recording video: " + e)
       };
 
       try
@@ -773,7 +781,7 @@ export default {
       setTimeout(() => {
         splashLoading.value = false;
 
-        if (!streamDidStart.value && isStreamingMode.value)
+        if (!streamDidStart.value && isStreamingMode.value && gotResponseFromServer)
         {
           notifyError("Failed to reach the camera. The camera stream may be down.")
         }
