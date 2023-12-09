@@ -476,10 +476,10 @@ export default {
 
     function toggleRecording(event)
     {
-      if (!supportsMediaRecorder.value)
+      if (!supportsMediaRecorder.value && isStreamingMode.value)
       {
         //notifyWarning("Warning, this browser does not support native video recording. The resulting video may display lower quality or framerates")
-        notifyWarning("Warning, this browser does not support native video recording. In order to record try updating the current browser or use a different browser such as Google Chrome.")
+        notifyWarning("Warning, this browser does not support native video recording. In order to record try updating the current browser, use a different browser, or connect from another device.")
         return;
       }
       if (isStreamLoading.value || isVideoDownloading.value)
