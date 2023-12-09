@@ -584,7 +584,7 @@ export default {
         if (event.data.size > 0) {
           recordedChunks.push(event.data);
         }
-      };
+      });
 
       mediaRecorder.addEventListener('stop', () => {
         notifyWarning("media recorder stopped")
@@ -597,7 +597,7 @@ export default {
 
       mediaRecorder.addEventListener('error', (e) => {
         notifyWarning("Error recording video: " + e)
-      };
+      });
 
       try
       {
