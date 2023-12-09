@@ -544,7 +544,7 @@ export default {
       }
       else
       {
-        notifyWarning("Calling stop on media recorder  " + mediaRecorder.state)
+        notifyWarning("Calling stop on media recorder  " + mediaRecorder.stop)
         mediaRecorder.stop();
       }
     }
