@@ -564,8 +564,6 @@ export default {
 
     function startRecording()
     {
-      let options;
-      let type;
       let stream;
 
       notifyWarning("starting recording: ")
@@ -585,7 +583,15 @@ export default {
       {
         options = { mimeType: "video/webm; codecs=vp9" };
         type = "video/webm";
-        stream = videoRef.captureStream(); // This captures the stream from the video element
+        notifyWarning(videoRef.captureStream.toString())
+        try
+        {
+          stream = videoRef.captureStream(); // This captures the stream from the video element
+        }
+        catch (e)
+        {
+          notifyWarning("Error capturing stream: " + e.toString())
+        }
       }
 
       notifyWarning("creating media recorder")
