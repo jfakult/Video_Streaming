@@ -544,7 +544,7 @@ export default {
       }
       else
       {
-        notifyWarning("Calling stop on media recorder")
+        notifyWarning("Calling stop on media recorder  " + mediaRecorder.state)
         mediaRecorder.stop();
       }
     }
@@ -633,7 +633,7 @@ export default {
       if (supportsMediaRecorder.value)
       {
         filename = `wildstream_${new Date().toISOString().replace(/\..+/, '').replace(/:/g, '-').replace(/T/, ':')}.webm`;
-        mediaRecorder.stop()
+        //mediaRecorder.stop()
         url = URL.createObjectURL(recordedBlob);
       }
       else
