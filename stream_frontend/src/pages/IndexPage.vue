@@ -247,7 +247,7 @@ export default {
     const isIOS = ref(detectIOS());
     const supportsMediaRecorder = ref(window.MediaRecorder !== undefined);
 
-    notifyWarning("Touch points:" + navigator.maxTouchPoints + "\nSystem Platform: " + navigator.platform + "\n" + "User Agent: " + navigator.userAgent + "\n" + "Is iOS: " + isIOS.value + "\n" + "Supports Media Recorder: " + supportsMediaRecorder.value)
+    // notifyWarning("Touch points:" + navigator.maxTouchPoints + "\nSystem Platform: " + navigator.platform + "\n" + "User Agent: " + navigator.userAgent + "\n" + "Is iOS: " + isIOS.value + "\n" + "Supports Media Recorder: " + supportsMediaRecorder.value)
 
     /*let ffmpeg;
     if (!supportsMediaRecorder.value)
@@ -396,14 +396,11 @@ export default {
 
     function handleWebSocketMessage(event)
     {
-      notifyWarning("Recieved message from server: " + event.data)
       gotResponseFromServer = true;
       if (event.data == "pong")
       {
         return;
       }
-
-      console.log("Recieved message from server: ", event.data)
 
       try {
         const data = JSON.parse(event.data);
@@ -541,7 +538,6 @@ export default {
 
     function stopRecording()
     {
-      notifyWarning("stopping recording: " + supportsMediaRecorder.value)
       if (!supportsMediaRecorder.value)
       {
         cancelAnimationFrame(canvasAnimationHandle)
@@ -549,14 +545,13 @@ export default {
       }
       else
       {
-        notifyWarning("Calling stop on media recorder  ")
         try
         {
           mediaRecorder.stop();
         }
         catch (e)
         {
-          notifyWarning("Error stopping media recorder: " + e.toString())
+          notifyError("Error stopping media recorder: " + e.toString())
         }
         //mediaRecorder.onstop()
       }
@@ -568,7 +563,6 @@ export default {
       let options;
       let type;
 
-      notifyWarning("starting recording: ")
       if (!supportsMediaRecorder.value)
       {
         options = { mimeType: "video/mp4" };
@@ -583,22 +577,18 @@ export default {
       }
       else
       {
-        notifyWarning("getting stream")
-        notifyWarning(videoRef.toString())
         options = { mimeType: "video/webm; codecs=vp9" };
         type = "video/webm";
-        notifyWarning(videoRef.captureStream.toString())
         try
         {
           stream = videoRef.captureStream(); // This captures the stream from the video element
         }
         catch (e)
         {
-          notifyWarning("Error capturing stream: " + e.toString())
+          notifyError("Error capturing stream: " + e.toString())
+          return
         }
       }
-
-      notifyWarning("creating media recorder")
 
       try
       {
@@ -616,7 +606,6 @@ export default {
       });
 
       mediaRecorder.addEventListener('stop', () => {
-        notifyWarning("media recorder stopped")
         recordedBlob = new Blob(recordedChunks, {
           type: "video/webm",
         });
@@ -625,14 +614,12 @@ export default {
       });
 
       mediaRecorder.addEventListener('error', (e) => {
-        notifyWarning("Error recording video: " + e)
+        notifyError("Error recording video: " + e)
       });
 
       try
       {
-        notifyWarning("mediarecorder starting recording")
         mediaRecorder.start();
-        notifyWarning("media recorder started")
       }
       catch (e)
       {
@@ -664,11 +651,10 @@ export default {
 
     function downloadVideo()
     {
-      notifyWarning("starting download")
       isVideoDownloading.value = true;
       let filename;
       let url;
-      try {
+      
       if (supportsMediaRecorder.value)
       {
         filename = `wildstream_${new Date().toISOString().replace(/\..+/, '').replace(/:/g, '-').replace(/T/, ':')}.webm`;
@@ -690,7 +676,6 @@ export default {
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
       isVideoDownloading.value = false;
-    } catch(e) { notifyWarning("Error downloading video: " + e) }
     }
 
     function videoOnPlay() {
@@ -802,7 +787,7 @@ export default {
       setupWebSocket();
 
       videoRef = video.value.getVideoElem();
-      //videoRef = video.value;
+      supportsMediaRecorder.value = supportsMediaRecorder.value && videoRef.captureStream !== undefined;
 
       setInterval(monitorStreamStatus, STREAM_MONITOR_INTERVAL)
 
