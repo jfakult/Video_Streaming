@@ -294,6 +294,7 @@ export default {
     let frameCanvas = document.createElement('canvas');
     let frameCanvasCtx = frameCanvas.getContext('2d');
     let canvasAnimationHandle = 0;
+    let gotResponseFromServer = false;
 
     /*
     // This should be handled by monitorStreamStatus()
@@ -395,6 +396,7 @@ export default {
 
     function handleWebSocketMessage(event)
     {
+      notifyWarning("Recieved message from server: " + event.data)
       gotResponseFromServer = true;
       if (event.data == "pong")
       {
