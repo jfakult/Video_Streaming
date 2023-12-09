@@ -555,8 +555,6 @@ export default {
       let type;
       let stream;
 
-      notifyWarning("starting recording: ")
-
       if (!supportsMediaRecorder.value)
       {
         options = { mimeType: "video/mp4" };

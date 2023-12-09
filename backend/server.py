@@ -52,7 +52,12 @@ class ScopeServer:
                     self.PI_STATE = "stream"
 
                 for uuid, socket in self.socket_connections.items():
-                    await socket.send(json.dumps(response))
+                    try:
+                        await socket.send(json.dumps(response))
+                    except:
+                        print("Error sending message to socket: ", uuid)
+                        del self.socket_connections[uuid]
+
                 #await websocket.send(json.dumps(response))
             
         except:
@@ -74,6 +79,8 @@ class ScopeServer:
                 await self.handle_message(websocket, message)
         except websockets.ConnectionClosedOK:
             print("Connection closed!")
+        except websockets.ConnectionClosedError as e:
+            print("Connection closed (with error!", e)
 
         del self.socket_connections[websocket.uuid]
 
