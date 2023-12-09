@@ -487,8 +487,6 @@ export default {
       }
 
       isRecording.value = !isRecording.value;
-      notifyWarning("starting toggle0")
-      notifyWarning("", event)
 
       if (event)
       {
@@ -496,7 +494,6 @@ export default {
         event.preventDefault();
       }
 
-      notifyWarning("starting toggle")
       // Note these seem backwards, but we flip the bool above
       if (isRecording.value)
       {
@@ -547,6 +544,7 @@ export default {
       }
       else
       {
+        notifyWarning("Calling stop on media recorder")
         mediaRecorder.stop();
       }
     }
@@ -587,6 +585,7 @@ export default {
       };
 
       mediaRecorder.onstop = () => {
+        notifyWarning("media recorder stopped")
         recordedBlob = new Blob(recordedChunks, {
           type: "video/webm",
         });
