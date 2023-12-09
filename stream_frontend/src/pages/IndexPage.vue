@@ -593,7 +593,9 @@ export default {
 
       try
       {
+        notifyWarning("mediarecorder starting recording")
         mediaRecorder.start();
+        notifyWarning("media recorder started")
       }
       catch (e)
       {
