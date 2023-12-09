@@ -580,22 +580,22 @@ export default {
 
       mediaRecorder = new MediaRecorder(stream);
 
-      mediaRecorder.ondataavailable = (event) => {
+      mediaRecorder.addEventListener('dataavailable', (event) => {
         if (event.data.size > 0) {
           recordedChunks.push(event.data);
         }
       };
 
-      mediaRecorder.onstop = () => {
+      mediaRecorder.addEventListener('stop', () => {
         notifyWarning("media recorder stopped")
         recordedBlob = new Blob(recordedChunks, {
           type: "video/webm",
         });
         recordedChunks = []; // Clear the recorded chunks
         downloadVideo();
-      };
+      });
 
-      mediaRecorder.onerror = (e) => {
+      mediaRecorder.addEventListener('error', (e) => {
         notifyWarning("Error recording video: " + e)
       };
 
