@@ -577,8 +577,10 @@ export default {
       }
       else
       {
-        options = { mimeType: "video/webm; codecs=vp9" };
-        type = "video/webm";
+        //options = { mimeType: "video/webm; codecs=vp9" };
+        //type = "video/webm";
+        options = { mimeType: "video/mp4" };
+        type = "video/mp4";
         try
         {
           stream = videoRef.captureStream(); // This captures the stream from the video element
@@ -607,7 +609,8 @@ export default {
 
       mediaRecorder.addEventListener('stop', () => {
         recordedBlob = new Blob(recordedChunks, {
-          type: "video/webm",
+          //type: "video/webm",
+          type: "video/mp4",
         });
         recordedChunks = []; // Clear the recorded chunks
         downloadVideo();
@@ -657,7 +660,8 @@ export default {
       
       if (supportsMediaRecorder.value)
       {
-        filename = `wildstream_${new Date().toISOString().replace(/\..+/, '').replace(/:/g, '-').replace(/T/, ':')}.webm`;
+        //filename = `wildstream_${new Date().toISOString().replace(/\..+/, '').replace(/:/g, '-').replace(/T/, ':')}.webm`;
+        filename = `wildstream_${new Date().toISOString().replace(/\..+/, '').replace(/:/g, '-').replace(/T/, ':')}.mp4`;
         //mediaRecorder.stop()
         url = URL.createObjectURL(recordedBlob);
       }
