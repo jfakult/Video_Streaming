@@ -25,6 +25,7 @@
         queuedCandidates: [],
         offerData: null,
 
+        streamLocation: window.location.protocol + "//" + window.location.hostname + "/cam/",
         // There is a discrepency between how the WebRTC client handles things (sessionURL vs eTag)
         IS_RASPBERRY_PI: true,
       };
@@ -141,7 +142,7 @@
       
       start() {
         console.log("Requesting ICE servers");
-        const url = new URL('whep', window.location.href + "cam/"); // + window.location.search;
+        const url = new URL('whep', this.streamLocation); // + window.location.search;
 
         fetch(url, { method: 'OPTIONS' })
           .then(res => this.onIceServers(res))
@@ -186,8 +187,8 @@
         this.offerData = this.parseOffer(offer.sdp);
         this.pc.setLocalDescription(offer);
 
-        console.log("Sending offer");
-        const url = new URL('whep', window.location.href + "cam/"); // + window.location.search;
+        //console.log("Sending offer");
+        const url = new URL('whep', this.streamLocation); // + window.location.search;
 
         fetch(url, {
           method: 'POST',
@@ -198,10 +199,11 @@
         })
         .then(res => {
           if (res.status !== 201) {
+            //console.log("hello")
             throw new Error('Bad status code');
           }
           this.eTag = res.headers.get('ETag');
-          this.sessionUrl = new URL(res.headers.get('location'), window.location.href).toString();
+          this.sessionUrl = new URL(res.headers.get('location'), this.streamLocation).toString();
 
           console.log("Session URL:", this.sessionUrl);
           console.log("eTag:", this.eTag);
@@ -268,7 +270,7 @@
       },
 
       sendLocalCandidates(candidates) {
-        //const url = new URL('whep', window.location.href + "cam/"); // + window.location.search;
+        //const url = new URL('whep', this.streamLocation); // + window.location.search;
         const url = this.sessionUrl;
 
         let headers = {

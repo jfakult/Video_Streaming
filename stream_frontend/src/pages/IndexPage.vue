@@ -19,8 +19,7 @@
     <q-btn round dense flat class="top-right" :ripple="false">
       <q-icon name="battery_full" size="lg" color="white" />
     </q-btn>
-    -->
-
+   
     <q-btn-toggle
       :class="interactionIdleTimeExpired ? 'fade-out bottom-right' : 'bottom-right'"
       v-model="streamModeControl"
@@ -49,9 +48,10 @@
         </div>
       </template>
     </q-btn-toggle>
+    -->
 
     <div :class="interactionIdleTimeExpired ? 'fade-out controls-container bottom-right' : 'controls-container bottom-right'">
-      <q-button>
+      <q-btn>
         <q-icon name="help" color="white" size="2rem" />
         <q-popup-proxy
           ref="helpPopup"
@@ -67,19 +67,19 @@
               <q-icon name="close" color="color-dark-background" size="2rem" class="close-button" @click="closeHelpMenu" />
             </div>
             <br />
-            <q-button style="cursor: default; display: block; width: fit-content; margin-left: 0;">
+            <q-btn style="cursor: default; display: block; width: fit-content; margin-left: 0;">
               <q-icon name="add_a_photo" color="white" size="1.25rem" />
-            </q-button>
+            </q-btn>
             <div class="help-menu-text">This button will take a screenshot and save it!</div>
-            <q-button style="cursor: default; display: block; width: fit-content; margin-left: 0;">
+            <q-btn style="cursor: default; display: block; width: fit-content; margin-left: 0;">
               <q-icon name="video_call" color="white" size="1.5rem" />
-            </q-button>
+            </q-btn>
             <div class="help-menu-text">This button starts a video recording of the stream! The blinking  <q-icon name="stop_circle" color="red" size="1.5rem" /> indicates it is recording. Press it again to save the video</div>
-            <q-button style="cursor: default; display: block; width: fit-content; margin-left: 0;">
+            <q-btn style="cursor: default; display: block; width: fit-content; margin-left: 0;">
               <q-icon name="fullscreen" color="white" size="1.5rem" />
-            </q-button>
+            </q-btn>
             <div class="help-menu-text">This button toggles fullscreen mode</div>
-            <q-btn-toggle
+		<q-btn-toggle
               v-model="streamModeControl"
               rounded
               class="tiny"
@@ -113,13 +113,13 @@
           </q-banner>
         </q-popup-proxy>
 
-      </q-button>
+      </q-btn>
 
-      <q-button @click="toggleFullScreen">
+      <q-btn @click="toggleFullScreen">
         <q-icon :name="isFullscreen ? 'fullscreen_exit' : 'fullscreen'" color="white" size="2rem" />
-      </q-button>
+      </q-btn>
 
-      <q-button @click.prevent="toggleRecording">
+      <q-btn @click.prevent="toggleRecording">
         <q-icon :style="isVideoDownloading ? 'visibility: hidden' : ''" :name="isRecording ? 'stop_circle' : 'video_call'" :color="isRecording ? recordingBlinker : (isStreamLoading || !supportsMediaRecorder ? 'grey-9' : 'white')" size="2rem" />
         <q-spinner-oval
               :style="isVideoDownloading ? '' : 'display: none;'"
@@ -128,9 +128,9 @@
               thickness="2"
               class="absolute center-spinner"
             />
-      </q-button>
+      </q-btn>
 
-      <q-button @click="takeScreenShot">
+      <q-btn @click="takeScreenShot">
         <q-icon :style="isPhotoDownloading ? 'visibility: hidden' : ''" name="add_a_photo" :color="isStreamLoading ? 'grey-9' : 'white'" size="2rem" />
         <q-spinner-oval
             :style="isPhotoDownloading ? '' : 'display: none;'"
@@ -139,7 +139,7 @@
             thickness="2"
             class="absolute center-spinner"
           />
-      </q-button>
+      </q-btn>
       <!-- Vestigial features
       <q-fab v-model="qualityControl"
              label=""
@@ -188,9 +188,9 @@
 
     <!--
     <div :class="interactionIdleTimeExpired ? 'fade-out controls-container top-right' : 'controls-container top-right'">
-      <q-button @click="toggleFullScreen">
+      <q-btn @click="toggleFullScreen">
         <q-icon :name="isFullscreen ? 'fullscreen_exit' : 'fullscreen'" color="white" size="2rem" />
-      </q-button>
+      </q-btn>
 
       <!-=- Show when the stream is down (but not on initial page load) -->
       <!--
@@ -210,10 +210,6 @@
 import { ref, onMounted } from 'vue';
 import { useQuasar } from 'quasar';
 import CameraStream from '../components/CameraStream.vue';
-/*
-import { FFmpeg } from '@ffmpeg/ffmpeg';
-import { toBlobURL } from '@ffmpeg/util';
-*/
 
 export default {
   name: 'PageIndex',
@@ -231,7 +227,7 @@ export default {
     const splashLoading = ref(true); // probably don't need this anymore
     const helpPopup = ref(null);
     //const qualityControl = ref(null);
-    const streamModeControl = ref("");
+    const streamModeControl = ref("stream");
     //const qualityControlIcon = ref("speed");
     //const streamControlIcon = ref("wifi")
     const isRecording = ref(false);
@@ -348,7 +344,7 @@ export default {
 
     function setupWebSocket()
     {
-      var url = new URL('/control', window.location.href);
+      var url = new URL('/control', window.location.protocol + "//" + window.location.hostname + "/cam/");
       // EDIT AS NEEDED
       url.protocol = url.protocol.replace('http', 'ws');
       //url.protocol = url.protocol.replace('https', 'wss');
@@ -367,7 +363,7 @@ export default {
         socketPingHandle = setInterval(() => { websocket.send("ping") }, 29 * 1000)
 
         // Add this?
-        //streamModeControl.value = "stream"
+        streamModeControl.value = "stream"
         //toggleStreamMode("stream") 
       };
       
@@ -411,7 +407,7 @@ export default {
         {
           gotWebsocketInitMessage = true;
           isStreamingMode.value = data.data == "stream" ? true : false;
-          streamModeControl.value = data.data == "stream" ? "stream" : "scope";
+          streamModeControl.value = "stream" //data.data == "stream" ? "stream" : "scope";
           //streamControlIcon.value = data.data == "wifi" ? "wifi" : "smart_display";
         }
         /*
@@ -512,7 +508,7 @@ export default {
       if (websocket && websocket.readyState === WebSocket.OPEN)
       {
         gotResponseFromServer = false;
-        websocket.send(JSON.stringify({ message_type: "stream_mode", data: mode }));
+        websocket.send(JSON.stringify({ message_type: "stream_mode", data: "stream" }));
         streamModeHandle = setTimeout(() => { notifyError("The camera did not respond in time. Try waiting or refresh the screen.") }, SERVER_COMMUNICATION_TIMEOUT)
       }
       else
@@ -630,6 +626,7 @@ export default {
       }
     }
 
+    /*
     async function compileVideo(filename) {
       for (let i = 0; i < recordedVideoFrames.length; i++) {
         const frame = recordedVideoFrames[i];
@@ -651,6 +648,7 @@ export default {
 
       return url;
     }
+    */
 
     function downloadVideo()
     {
@@ -977,7 +975,7 @@ html {
   text-align: center;
 }
 
-q-button {
+q-btn {
   background: var(--q-color-dark-background);
   border-radius: 1rem;
   padding: 0.5rem;
