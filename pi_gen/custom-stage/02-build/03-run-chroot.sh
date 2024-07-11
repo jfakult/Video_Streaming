@@ -1,7 +1,9 @@
 #!/bin/bash
 
 # URL of the release tar.gz file
-url="https://github.com/bluenviron/mediamtx/releases/download/v1.2.0/mediamtx_v1.2.0_linux_armv7.tar.gz"
+#url="https://github.com/bluenviron/mediamtx/releases/download/v1.2.0/mediamtx_v1.2.0_linux_armv7.tar.gz"
+#url="https://github.com/bluenviron/mediamtx/releases/download/v1.8.3/mediamtx_v1.8.3_linux_armv7.tar.gz"
+url="https://github.com/bluenviron/mediamtx/releases/download/v1.8.3/mediamtx_v1.8.3_linux_arm64v8.tar.gz"
 
 # Temporary directory to store the downloaded tar.gz file
 temp_dir=$(mktemp -d)

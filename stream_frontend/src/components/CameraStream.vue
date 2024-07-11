@@ -16,15 +16,35 @@
     },
 
     data() {
+        /*const workerScript = `self.addEventListener('rtctransform', (event) => {
+        const transformer = event.transformer;
+
+        transformer.readable.pipeThrough(new TransformStream({
+          async transform(encodedFrame, controller) {
+            if (encodedFrame.type === 'key') {
+              // Key frame received, stop requesting
+              self.stopRequestingKeyFrame = true;
+            }
+            if (!self.stopRequestingKeyFrame) {
+              transformer.sendKeyFrameRequest();
+            }
+            controller.enqueue(encodedFrame);
+          }
+        })).pipeTo(transformer.writable);
+      });`;
+
+      const workerBlob = new Blob([workerScript], { type: 'application/javascript' });
+      const workerURL = URL.createObjectURL(workerBlob);
+      */
+
       return {
-        restartPause: 1000,
+        restartPause: 750,
         pc: null,
         restartTimeout: null,
         eTag: '',
         sessionUrl: '',
         queuedCandidates: [],
         offerData: null,
-
         streamLocation: window.location.protocol + "//" + window.location.hostname + "/cam/",
         // There is a discrepency between how the WebRTC client handles things (sessionURL vs eTag)
         IS_RASPBERRY_PI: true,
@@ -101,6 +121,32 @@
   
         return lines.join('\r\n');
       },
+
+      // See detailed comment below on keyframe requests in onConnectionState
+      /*enableKeyframeRequest(section) {
+        let lines = section.split('\r\n');
+        for (let i = 0; i < lines.length; i++) {
+          if (lines[i].startsWith('a=fmtp:') && lines[i].includes('H264')) {
+            lines[i] += ';x-google-min-bitrate=500;x-google-max-bitrate=5000;x-google-start-bitrate=1000;x-google-max-quant=30;x-google-min-quant=20';
+          }
+        }
+        return lines.join('\r\n');
+      },*/
+
+      /*editOffer(offer) {
+        const sections = offer.sdp.split('m=');
+
+        for (let i = 0; i < sections.length; i++) {
+          const section = sections[i];
+          if (section.startsWith('audio')) {
+            sections[i] = this.enableStereoOpus(section);
+          } else if (section.startsWith('video')) {
+            sections[i] = this.enableKeyframeRequest(section);
+          }
+        }
+
+        offer.sdp = sections.join('m=');
+      },*/
       editOffer(offer) {
         const sections = offer.sdp.split('m=');
   
@@ -141,13 +187,13 @@
       },
       
       start() {
-        console.log("Requesting ICE servers");
+        console.log(new Date() - 0, "Requesting ICE servers");
         const url = new URL('whep', this.streamLocation); // + window.location.search;
 
         fetch(url, { method: 'OPTIONS' })
           .then(res => this.onIceServers(res))
           .catch(err => {
-            console.log('Error:', err);
+            console.log(new Date() - 0, 'Error:', err);
             this.scheduleRestart();
           });
       },
@@ -180,6 +226,43 @@
           .then((offer) => this.onLocalOffer(offer))
           .catch(err => console.error("Create Offer Error:", err));
       },
+      /*onIceServers(res) {
+        this.pc = new RTCPeerConnection({
+          iceServers: this.linkToIceServers(res.headers.get('Link')),
+        });
+
+        const direction = "sendrecv";
+        this.pc.addTransceiver("video", { direction });
+
+        this.pc.onicecandidate = (evt) => this.onLocalCandidate(evt);
+        this.pc.oniceconnectionstatechange = () => this.onConnectionState();
+
+        this.pc.ontrack = (evt) => {
+          evt.track.onended = () => {
+            this.$refs.videoElement.pause();
+          };
+
+          this.$refs.videoElement.srcObject = evt.streams[0];
+          this.$refs.videoElement.muted = true;
+          this.$refs.videoElement.play();
+        };
+
+        const worker = new Worker(this.workerURL);
+        const channel = new MessageChannel();
+
+        const receiver = this.pc.getReceivers().find(r => r.track.kind === 'video');
+        if (receiver) {
+          receiver.transform = new RTCRtpScriptTransformer(
+            worker,
+            { port: channel.port2 },
+            [channel.port2]
+          );
+        }
+
+        this.pc.createOffer()
+          .then((offer) => this.onLocalOffer(offer))
+          .catch(err => console.error("Create Offer Error:", err));
+      },*/
 
       onLocalOffer(offer) {
         this.editOffer(offer);
@@ -187,7 +270,7 @@
         this.offerData = this.parseOffer(offer.sdp);
         this.pc.setLocalDescription(offer);
 
-        //console.log("Sending offer");
+        console.log(new Date() - 0, "Sending offer");
         const url = new URL('whep', this.streamLocation); // + window.location.search;
 
         fetch(url, {
@@ -205,8 +288,8 @@
           this.eTag = res.headers.get('ETag');
           this.sessionUrl = new URL(res.headers.get('location'), this.streamLocation).toString();
 
-          console.log("Session URL:", this.sessionUrl);
-          console.log("eTag:", this.eTag);
+          console.log(new Date() - 0, "Session URL:", this.sessionUrl);
+          console.log(new Date() - 0, "eTag:", this.eTag);
           return res.text();
         })
         .then(sdp => this.onRemoteAnswer(new RTCSessionDescription({
@@ -214,19 +297,29 @@
           sdp,
         })))
         .catch(err => {
-          console.log('Error:', err);
+          console.log(new Date() - 0, 'Error:', err);
           this.scheduleRestart();
         });
       },
 
       onConnectionState() {
-        console.log("Connection State Change:", this.pc.iceConnectionState)
+        console.log(new Date() - 0, "Connection State Change:", this.pc.iceConnectionState)
         if (this.restartTimeout !== null) {
           return;
         }
 
+        // This section is critical for stream startup latency
+        // Essentially it signals to the stream provider (the pi) has missed a frame.
+        // (an RTCP Picture Loss Indication (PLI) message to request an initial keyframe immediately)
+        // This should trick the pi into sending a keyframe, thus immediately starting the stream on load
+        // Without this, the frontend may have to wait 1-2 keyframe intervals
+        // And we want to keep the interval high so that datarate can be lower 
+        if (this.pc.iceConnectionState === "connected") {
+          console.log(new Date() - 0, "ICE Connection State is connected, requesting initial keyframe");
+        }
+
         if (this.pc.iceConnectionState === "disconnected") {
-          console.log("Disconnected...")
+          console.log(new Date() - 0, "Disconnected...")
           this.scheduleRestart();
         }
       },
@@ -293,11 +386,11 @@
         })
         .then(res => {
           if (res.status !== 204) {
-            throw new Error('Bad status code');
+            throw new Error('Bad status code', res);
           }
         })
         .catch(err => {
-          console.log('Local Candidate Error:', err);
+          console.log(new Date() - 0, 'Local Candidate Error:', err);
           this.scheduleRestart();
         });
       },
@@ -328,7 +421,7 @@
                     }
                 })
                 .catch((err) => {
-                    console.log('delete session error: ' + err);
+                    console.log(new Date() - 0, 'delete session error: ' + err);
                 });
         }
         this.eTag = '';

@@ -23,6 +23,12 @@ systemctl unmask hostapd && \
 systemctl start hostapd && \
 $BASE/scripts/enable_hotspot.sh
 
+
+# Disable any not needed features
+systemctl disable cups
+echo "dtoverlay=disable-bt" >> /boot/firmware/config.txt
+
+
 # Make sure to rebuild the latest frontend source
 cd $BASE/stream_frontend
 sudo -u pi ./build.sh

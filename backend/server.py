@@ -14,7 +14,7 @@ ROOT_PATH = "/home/pi/Video_Streaming"
 class ScopeServer:
     def __init__(self):
         self.socket_connections = {}
-        self.PI_STATE = "scope"
+        self.PI_STATE = "stream"
         pass
 
     # Data comes into the websocket
@@ -25,7 +25,7 @@ class ScopeServer:
             await websocket.send("pong")
 
             return
-        
+
         try:
             data = json.loads(message)
             message_type = data["message_type"]
@@ -59,7 +59,7 @@ class ScopeServer:
                         del self.socket_connections[uuid]
 
                 #await websocket.send(json.dumps(response))
-            
+
         except:
             print("Unknown message recieved: ", message)
             await websocket.send(f"Unknown message recieved: '{message}'")
@@ -86,12 +86,12 @@ class ScopeServer:
 
 if __name__ == "__main__":
     print("Starting streaming service")
-    logo = subprocess.Popen(['sh', f'{ROOT_PATH}/scripts/logo.sh'])
+    #logo = subprocess.Popen(['sh', f'{ROOT_PATH}/scripts/logo.sh'])
     time.sleep(1)
-    logo.terminate()
+    #logo.terminate()
     print("terminated logo")
-    subprocess.Popen(['sh', f'{ROOT_PATH}/scripts/screen.sh'])
-    
+    subprocess.Popen(['sh', f'{ROOT_PATH}/scripts/stream.sh'])
+
     server = ScopeServer()
 
     print(f"Starting WebSocket server on 0.0.0.0:{SERVER_PORT}...")

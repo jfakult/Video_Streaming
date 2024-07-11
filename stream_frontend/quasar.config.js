@@ -69,12 +69,12 @@ module.exports = configure(function (/* ctx */) {
       // EDIT AS NEEDED
       //publicPath: '/wildstream',
       publicPath: '/',
-      analyze: true,
+      analyze: false,
       // env: {},
       // rawDefine: {}
       // ignorePublicFolder: true,
       minify: false,
-      sourcemap: true,
+      sourcemap: false,
       // polyfillModulePreload: true,
       // distDir
 
