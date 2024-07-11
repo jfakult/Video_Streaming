@@ -7,48 +7,7 @@
     <div class="video-wrapper" ref="videoWrapper">
       <!-- EDIT AS NEEDED -->
       <CameraStream ref="video" :onplay="videoOnPlay" :onpause="videoOnPause" :controls="isFullscreen && isIOS" />
-      
-<!--
-      <video ref="video" class="fullscreen-video" controls playsinline autoplay muted loop>
-        <source src="video/sample-5s.mp4" type="video/mp4">
-      </video>
-    -->
     </div>
-
-    <!--
-    <q-btn round dense flat class="top-right" :ripple="false">
-      <q-icon name="battery_full" size="lg" color="white" />
-    </q-btn>
-   
-    <q-btn-toggle
-      :class="interactionIdleTimeExpired ? 'fade-out bottom-right' : 'bottom-right'"
-      v-model="streamModeControl"
-      @update:model-value="toggleStreamMode"
-      rounded
-      color="grey-6"
-      text-color="white"
-      toggle-color="primary"
-      :options="[
-        {value: 'scope', slot: 'one'},
-        {value: 'stream', slot: 'two'},
-      ]" >
-      <template v-slot:one>
-        <div class="row items-center no-wrap">
-          <div class="text-center">
-            Scope
-          </div>
-        </div>
-      </template>
-
-      <template v-slot:two>
-        <div class="row items-center no-wrap">
-          <div class="text-center">
-            Stream
-          </div>
-        </div>
-      </template>
-    </q-btn-toggle>
-    -->
 
     <div :class="interactionIdleTimeExpired ? 'fade-out controls-container bottom-right' : 'controls-container bottom-right'">
       <q-btn>
@@ -125,7 +84,7 @@
               :style="isVideoDownloading ? '' : 'display: none;'"
               color="grey-6"
               size="2rem"
-              thickness="2"
+              :thickness="2"
               class="absolute center-spinner"
             />
       </q-btn>
@@ -136,23 +95,10 @@
             :style="isPhotoDownloading ? '' : 'display: none;'"
             color="grey-6"
             size="2rem"
-            thickness="2"
+            :thickness="2"
             class="absolute center-spinner"
           />
       </q-btn>
-      <!-- Vestigial features
-      <q-fab v-model="qualityControl"
-             label=""
-             color="color-sunset-4"
-             :icon="qualityControlIcon"
-             direction="left"
-             class="fab-button-inside"
-             :style="DEBUG_MODE ? '' : 'display: none;'"
-             persistent>
-            <q-fab-action color="color-sunset-1" @click="setQuality('low')" icon="cell_tower" label="Better Reliability"/>
-            <q-fab-action color="color-sunset-1" @click="setQuality('high')" icon="speed" label="Better Quality"/>
-      </q-fab>
-      -->
       <!--<q-fab-action color="info" class="fab-button" @click="toggleHelp" icon="help" />-->
     </div>
 
@@ -167,7 +113,7 @@
         <q-spinner
           color="color-sunset-1"
           :size="splashLoading ? '30vw' : '20vw'"
-          thickness="1"
+          :thickness="1"
           class="absolute"
         />
 
@@ -181,23 +127,10 @@
         <div class="absolute text-white big-font">The stream has been<br>redirected to the scope</div>
 
         <!-- Disable the default spinner by creating an empty one -->
-        <q-spinner size="0vw" thickness="0" class="absolute"/>
+        <q-spinner size="0vw" :thickness="0" class="absolute"/>
     </q-inner-loading>
 
     <div ref="recording-indicator" :class="recordingBlinker == 'red' ? 'recording-indicator' : 'recording-indicator dark-border'" :style="isRecording ? '' : 'display: none'"></div>
-
-    <!--
-    <div :class="interactionIdleTimeExpired ? 'fade-out controls-container top-right' : 'controls-container top-right'">
-      <q-btn @click="toggleFullScreen">
-        <q-icon :name="isFullscreen ? 'fullscreen_exit' : 'fullscreen'" color="white" size="2rem" />
-      </q-btn>
-
-      <!-=- Show when the stream is down (but not on initial page load) -->
-      <!--
-        <q-icon size="3rem" color="color-sunset-2" :style="isStreamLoading && !splashLoading ? '' : 'display: none;'" :name="isStreamLoading && streamLoadingBlinker ? 'wifi' : 'wifi_off'" />
-      -=->
-    </div>
-    -->
 
     <q-img class="bottom-left" width="3rem" src="icons/Wildstream_logo.png" />
 
@@ -245,31 +178,11 @@ export default {
 
     // notifyWarning("Touch points:" + navigator.maxTouchPoints + "\nSystem Platform: " + navigator.platform + "\n" + "User Agent: " + navigator.userAgent + "\n" + "Is iOS: " + isIOS.value + "\n" + "Supports Media Recorder: " + supportsMediaRecorder.value)
 
-    /*let ffmpeg;
-    if (!supportsMediaRecorder.value)
-    {
-      ffmpeg = new FFmpeg();
-      (async () => {
-        ffmpeg.on('log', ({ message }) => {
-            console.log(message);
-        });
-        if (!crossOriginIsolated) SharedArrayBuffer = ArrayBuffer;
-        await ffmpeg.load({
-          coreURL: new URL("js/ffmpeg-core.js", window.location.href).href,
-          wasmURL: new URL("js/ffmpeg-core.wasm", window.location.href).href,
-          workerURL: new URL("js/ffmpeg-core.worker.js", window.location.href).href,
-        });
-        console.log("FFmpeg loaded")
-        //await ffmpeg.load()
-      })();
-    }
-    */
-
     const DEBUG_MODE = ref(window.location.search.includes("debug") || window.location.search.includes("DEBUG"))
 
     const streamDidStart = ref(false)
     let lastVidTime = 0;
-    let PAGE_LOAD_TIMEOUT = 5000;
+    let PAGE_LOAD_TIMEOUT = 8000;
     let canvasRecorder;
     let recordedVideoFrames = [];
     let mediaRecorder;
@@ -291,13 +204,6 @@ export default {
     let frameCanvasCtx = frameCanvas.getContext('2d');
     let canvasAnimationHandle = 0;
     let gotResponseFromServer = false;
-
-    /*
-    // This should be handled by monitorStreamStatus()
-    setTimeout(() => {
-      splashLoading.value = false;
-    }, 2000);
-    */
 
     setInterval(() => {
       recordingBlinker.value = recordingBlinker.value == "red" ? "black" : "red";
@@ -626,30 +532,6 @@ export default {
       }
     }
 
-    /*
-    async function compileVideo(filename) {
-      for (let i = 0; i < recordedVideoFrames.length; i++) {
-        const frame = recordedVideoFrames[i];
-        const response = await fetch(frame);
-        const blob = await response.blob();
-        const arrayBuffer = await blob.arrayBuffer();
-        const uint8Array = new Uint8Array(arrayBuffer);
-        await ffmpeg.writeFile(`frame${i}.jpeg`, uint8Array);
-      }
-
-      await ffmpeg.exec(['-framerate', '30', '-i', 'frame%d.jpeg', '-c:v', 'libx264', filename]);
-
-      const data = await ffmpeg.readFile(filename);
-      const videoBlob = new Blob([data.buffer], { type: 'video/mp4' });
-      const url = URL.createObjectURL(videoBlob);
-
-      // Save us some memory?
-      recordedVideoFrames = [];
-
-      return url;
-    }
-    */
-
     function downloadVideo()
     {
       isVideoDownloading.value = true;
@@ -689,12 +571,16 @@ export default {
 
     function monitorStreamStatus()
     {
+      //console.log(new Date() - 0, "Monitoring stream status")
+
       if (!videoRef || !gotWebsocketInitMessage)
       {
+        console.log("Returning because", videoRef, gotWebsocketInitMessage)
         return;
       }
 
       const vidTime = videoRef.currentTime;
+      //console.log("vidTime readout", vidTime)
 
       if (vidTime > lastVidTime)
       {
@@ -703,6 +589,7 @@ export default {
         isStreamLoading.value = false;
         // Only used so that we don't blink the "stream down" indicator on page load
         splashLoading.value = false
+        //console.log(new Date() - 0, "Stream is sending data")
       }
       else
       {
@@ -714,6 +601,9 @@ export default {
 
         isStreamLoading.value = true;
       }
+
+      isStreamLoading.value = false;
+      //console.log(new Date() - 0, "Streaming result", isStreamLoading.value, vidTime, lastVidTime)
       lastVidTime = vidTime;
     }
 
