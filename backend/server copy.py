@@ -18,38 +18,7 @@ from gi.repository import Gst, GLib
 
 Gst.init(None)
 
-#os.environ['GST_DEBUG'] = '3'  # Set debug level to 3 (INFO)
-
-'''
-import ArducamSDK
-
-# Camera configuration
-arducam_config = {
-    "u32CameraType": 0x4D091031,
-    "u32Width": 1920,
-    "u32Height": 1080,
-    "u8PixelBytes": 1,
-    "u8PixelBits": 8,
-    "u32I2cAddr": 0x20,
-    "emI2cMode": 3,
-    "emImageFmtMode": 0,
-    "u32TransLvl": 64
-}
-
-def init_camera(config):
-    handle, rtn_val = ArducamSDK.Py_ArduCam_autoopen(arducam_config)
-    if rtn_val == 0:
-        return handle
-    else:
-        raise RuntimeError(f"Failed to open camera, return value: {rtn_val}")
-
-camera = init_camera(arducam_config)
-'''
-
-### STREAMING CONSTANTS
-STREAM_BITRATE = 2000000
-STREAM_KEYFRAME_INTERVAL = 120
-STREAM_DESIRED_LATENCY = 5
+os.environ['GST_DEBUG'] = '3'  # Set debug level to 3 (INFO)
 
 # Constants
 LIBCAMERA_IN_PORT = 5000
@@ -58,7 +27,6 @@ LIBCAMERA_IN_PORT = 5000
 WEBSOCKET_CONTROL_PORT = 5001
 WEBSOCKET_VIDEO_PORT = 5002
 ROOT_PATH = "/home/pi/Video_Streaming"
-IS_STREAMING = False
 
 pipeline = None
 
@@ -125,46 +93,26 @@ def on_state_changed(bus, msg):
     print(f"Pipeline state changed from {old} to {new}")
 '''
 
-async def capture_frames():
-    buffer = bytearray()
-    start_code = b'\x00\x00\x00\x01' # Start code of h264 nal unit
-
+async def websocket_handler(websocket, path):
+    global pipeline
+    print("Got request to open video streaming websocket")
+    clients.add(websocket)
+    
+    # Force a keyframe when a new client connects
+    #event = Gst.Event.new_custom(Gst.EventType.CUSTOM_UPSTREAM, Gst.Structure.new_empty("GstForceKeyUnit"))
+    #event.get_structure().set_boolean("all-headers", True)
+    #pipeline.send_event(event)
+    
+    print(f"Client connected: {path}")
     udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     udp_sock.bind(("0.0.0.0", 5000))
 
-    STREAM_KEYFRAME_SIZE_FACTOR = 10   # Keyframes are big, make sure the buffer doesn't overflow
-    buffer_size = int((STREAM_BITRATE / 8) * STREAM_DESIRED_LATENCY * STREAM_KEYFRAME_SIZE_FACTOR)
-    
-    #udp_sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, buffer_size)
-    #udp_sock.settimeout(STREAM_KEYFRAME_INTERVAL / 30)  # Small timeout to prevent blocking
-
-    print("Setting UDP buffer size to", buffer_size / (1024*1024), "MB")
+    buffer = bytearray()
+    start_code = b'\x00\x00\x00\x01' # Start code of h264 nal unit
 
     try:
-        #ArducamSDK.Py_ArduCam_beginCaptureImage(camera)
         while True:
-            await asyncio.sleep(0.01) # reduce CPU usage, sleep less than a half a frame
-            #await asyncio.sleep(0.01) # reduce cpu usage, sleep less than a half a frame
-            if len(clients) == 0:
-                continue
-            
-            try:
-                data, addr = udp_sock.recvfrom(2 ** 16)
-            except socket.timeout:
-                print("Socket read timeout")
-                continue
-            '''
-            rtn_val = ArducamSDK.Py_ArduCam_captureImage(handle)
-            if rtn_val != 0:
-                print(f"Failed to capture image, return value: {rtn_val}")
-                continue
-            
-            rtn_val, data, rtn_cfg = ArducamSDK.Py_ArduCam_readImage(handle)
-            if rtn_val != 0:
-                print(f"Failed to read image, return value: {rtn_val}")
-                continue
-            '''
-
+            data, addr = udp_sock.recvfrom(65536)
             buffer.extend(data)
 
             while True:
@@ -177,42 +125,20 @@ async def capture_frames():
                     break
 
                 nal_unit = buffer[start_pos:end_pos]
-                for websocket in clients:
-                    try:
-                        await websocket.send(nal_unit)
-                    except websockets.exceptions.ConnectionClosedError as e:
-                        print(f"WebSocket connection error: {e}")
-                        clients.remove(websocket)
+                await websocket.send(nal_unit)
 
                 buffer = buffer[end_pos:]
-    except Exception as e:
-        print("Error sending h264 data", e)
+    except websockets.exceptions.ConnectionClosed:
+        print("Client disconnected")
     finally:
         udp_sock.close()
-        #ArducamSDK.Py_ArduCam_endCaptureImage(handle)
-        #ArducamSDK.Py_ArduCam_close(handle)
 
-async def websocket_handler(websocket, path):
-    #global pipeline
-    #global clients
-    print("Got request to open video streaming websocket")
-    clients.add(websocket)
-    
-    print(f"Client connected: {path}")
-    try:
-        async for message in websocket:
-            pass
-    finally:
-        clients.remove(websocket)
-
-async def start_video_websocket():
+def start_video_websocket():
     print("Starting up video streaming websocket")
-    try:
-        start_server = await websockets.serve(websocket_handler, "0.0.0.0", WEBSOCKET_VIDEO_PORT)
-        await start_server.wait_closed()
-    except Exception as e:
-        print("Failed to open video websocket:", e)
-    print("Closing video websocket")
+    asyncio.set_event_loop(asyncio.new_event_loop())
+    start_server = websockets.serve(websocket_handler, "0.0.0.0", WEBSOCKET_VIDEO_PORT)
+    asyncio.get_event_loop().run_until_complete(start_server)
+    asyncio.get_event_loop().run_forever()
 
 
 
@@ -292,36 +218,26 @@ class ScopeServer:
 
         del self.socket_connections[websocket.uuid]
 
-async def start_control_websocket():
+def start_control_websocket():
+    print("Starting up control websocket")
     server = ScopeServer()
-    try:
-        start_server = await websockets.serve(server.handler, "0.0.0.0", WEBSOCKET_CONTROL_PORT)
-        await start_server.wait_closed()
-    except Exception as e:
-        print("Failed to open control websocket:", e)
-    print("Done")
+    asyncio.set_event_loop(asyncio.new_event_loop())
+    start_server = websockets.serve(server.handler, "0.0.0.0", WEBSOCKET_CONTROL_PORT)
+    asyncio.get_event_loop().run_until_complete(start_server)
+    asyncio.get_event_loop().run_forever()
 
-async def start_libcamera_vid():
-    print("Starting libcamera")
-    try:
-        process = await asyncio.create_subprocess_shell(f'sh {ROOT_PATH}/scripts/stream.sh {STREAM_BITRATE} {STREAM_KEYFRAME_INTERVAL}')
-    except Exception as e:
-        print(f"Failed to start subprocess: {e}")
+
 
 
 #################
 ### MAIN LOOP ###
 #################
 print("Starting...")
-
-async def main():
-    await asyncio.gather(
-        start_libcamera_vid(),
-        start_control_websocket(),
-        start_video_websocket(),
-        capture_frames(),
-        #start_gstreamer_pipeline()
-    )
-
 if __name__ == "__main__":
-    asyncio.run(main())
+    threading.Thread(target=start_control_websocket).start()
+    threading.Thread(target=start_video_websocket).start()
+    
+    subprocess.Popen(['sh', f'{ROOT_PATH}/scripts/stream.sh'])
+    time.sleep(3)
+
+    #start_gstreamer_pipeline()
