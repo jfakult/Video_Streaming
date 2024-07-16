@@ -250,7 +250,7 @@ export default {
 
     function setupWebSocket()
     {
-      var url = new URL('/control', window.location.protocol + "//" + window.location.hostname);
+      var url = new URL('/control', window.location.protocol + "//" + window.location.hostname + "/cam/");
       // EDIT AS NEEDED
       url.protocol = url.protocol.replace('http', 'ws');
       //url.protocol = url.protocol.replace('https', 'wss');
@@ -258,7 +258,7 @@ export default {
       
       websocket.onopen = () => {
         // Acquire control when socket opens
-        console.log("Control websocket opened")
+        console.log("Websocket opened")
 
         if (socketPingHandle)
         {
@@ -282,11 +282,11 @@ export default {
       websocket.onclose = (event) => {
         if (event.wasClean)
         {
-          console.log(`Control socket closed cleanly, code=${event.code}, reason=${event.reason}`);
+          console.log(`Closed cleanly, code=${event.code}, reason=${event.reason}`);
         }
         else
         {
-          console.error('Control socket connection died');
+          console.error('Connection died');
         }
         
         // Attempt to reconnect after a delay
@@ -575,7 +575,7 @@ export default {
 
       if (!videoRef || !gotWebsocketInitMessage)
       {
-        //console.log("Returning because", videoRef, gotWebsocketInitMessage)
+        console.log("Returning because", videoRef, gotWebsocketInitMessage)
         return;
       }
 

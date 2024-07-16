@@ -1,468 +1,91 @@
 <template>
-    <div id="camera-stream-container">
-      <video ref="videoElement" id="video" autoplay playsinline muted preload="auto" @onplay="onplay" @onpause="onpause" :controls="showControls"></video>
-    </div>
+  <div id="camera-stream-container">
+    <video ref="videoElement" id="video" autoplay playsinline muted preload="auto" @play="onplay" @pause="onpause" :controls="showControls"></video>
+  </div>
 </template>
-  
+
 <script>
-  export default {
-    name: 'CameraStream',
+import JMuxer from 'jmuxer';
 
-    props: {
-        onplay: Function,
-        onpause: Function,
-        showControls: Boolean,
-        //needsRefreshing: Boolean,
+export default {
+  name: 'CameraStream',
+
+  props: {
+    onplay: Function,
+    onpause: Function,
+    showControls: Boolean,
+  },
+
+  data() {
+    return {
+      streamLocation: window.location.protocol + "//" + window.location.hostname + "/stream",
+      VIDEO_WEBSOCKET_RESTART_INTERVAL: 500,
+      jmuxer: undefined,
+    };
+  },
+
+  methods: {
+    getVideoElem() {
+      return this.$refs.videoElement
     },
 
-    data() {
-        /*const workerScript = `self.addEventListener('rtctransform', (event) => {
-        const transformer = event.transformer;
+    setupWebsocket(jmuxer)
+    {
+      const url = new URL(this.streamLocation)
+      url.protocol = url.protocol.replace('http', 'ws');
+      this.ws = new WebSocket(url);
 
-        transformer.readable.pipeThrough(new TransformStream({
-          async transform(encodedFrame, controller) {
-            if (encodedFrame.type === 'key') {
-              // Key frame received, stop requesting
-              self.stopRequestingKeyFrame = true;
-            }
-            if (!self.stopRequestingKeyFrame) {
-              transformer.sendKeyFrameRequest();
-            }
-            controller.enqueue(encodedFrame);
-          }
-        })).pipeTo(transformer.writable);
-      });`;
-
-      const workerBlob = new Blob([workerScript], { type: 'application/javascript' });
-      const workerURL = URL.createObjectURL(workerBlob);
-      */
-
-      return {
-        restartPause: 750,
-        pc: null,
-        restartTimeout: null,
-        eTag: '',
-        sessionUrl: '',
-        queuedCandidates: [],
-        offerData: null,
-        streamLocation: window.location.protocol + "//" + window.location.hostname + "/cam/",
-        // There is a discrepency between how the WebRTC client handles things (sessionURL vs eTag)
-        IS_RASPBERRY_PI: true,
-      };
-    },
-    methods: {
-      getVideoElem()
-      {
-        return this.$refs.videoElement;
-      },
-      unquoteCredential(v) {
-        return JSON.parse(`"${v}"`);
-      },
-      linkToIceServers(links) {
-        return (links !== null) ? links.split(', ').map((link) => {
-          const m = link.match(/^<(.+?)>; rel="ice-server"(; username="(.*?)"; credential="(.*?)"; credential-type="password")?/i);
-          const ret = {
-            urls: [m[1]],
-          };
-  
-          if (m[3] !== undefined) {
-            ret.username = this.unquoteCredential(m[3]);
-            ret.credential = this.unquoteCredential(m[4]);
-            ret.credentialType = "password";
-          }
-  
-          return ret;
-        }) : [];
-      },
-      parseOffer(offer) {
-        const ret = {
-          iceUfrag: '',
-          icePwd: '',
-          medias: [],
-        };
-  
-        for (const line of offer.split('\r\n')) {
-          if (line.startsWith('m=')) {
-            ret.medias.push(line.slice('m='.length));
-          } else if (ret.iceUfrag === '' && line.startsWith('a=ice-ufrag:')) {
-            ret.iceUfrag = line.slice('a=ice-ufrag:'.length);
-          } else if (ret.icePwd === '' && line.startsWith('a=ice-pwd:')) {
-            ret.icePwd = line.slice('a=ice-pwd:'.length);
-          }
-        }
-  
-        return ret;
-      },
-      enableStereoOpus(section) {
-        let opusPayloadFormat = '';
-        let lines = section.split('\r\n');
-  
-        for (let i = 0; i < lines.length; i++) {
-          if (lines[i].startsWith('a=rtpmap:') && lines[i].toLowerCase().includes('opus/')) {
-            opusPayloadFormat = lines[i].slice('a=rtpmap:'.length).split(' ')[0];
-            break;
-          }
-        }
-  
-        if (opusPayloadFormat === '') {
-          return section;
-        }
-  
-        for (let i = 0; i < lines.length; i++) {
-          if (lines[i].startsWith('a=fmtp:' + opusPayloadFormat + ' ')) {
-            if (!lines[i].includes('stereo')) {
-              lines[i] += ';stereo=1';
-            }
-            if (!lines[i].includes('sprop-stereo')) {
-              lines[i] += ';sprop-stereo=1';
-            }
-          }
-        }
-  
-        return lines.join('\r\n');
-      },
-
-      // See detailed comment below on keyframe requests in onConnectionState
-      /*enableKeyframeRequest(section) {
-        let lines = section.split('\r\n');
-        for (let i = 0; i < lines.length; i++) {
-          if (lines[i].startsWith('a=fmtp:') && lines[i].includes('H264')) {
-            lines[i] += ';x-google-min-bitrate=500;x-google-max-bitrate=5000;x-google-start-bitrate=1000;x-google-max-quant=30;x-google-min-quant=20';
-          }
-        }
-        return lines.join('\r\n');
-      },*/
-
-      /*editOffer(offer) {
-        const sections = offer.sdp.split('m=');
-
-        for (let i = 0; i < sections.length; i++) {
-          const section = sections[i];
-          if (section.startsWith('audio')) {
-            sections[i] = this.enableStereoOpus(section);
-          } else if (section.startsWith('video')) {
-            sections[i] = this.enableKeyframeRequest(section);
-          }
-        }
-
-        offer.sdp = sections.join('m=');
-      },*/
-      editOffer(offer) {
-        const sections = offer.sdp.split('m=');
-  
-        for (let i = 0; i < sections.length; i++) {
-          const section = sections[i];
-          if (section.startsWith('audio')) {
-            sections[i] = this.enableStereoOpus(section);
-          }
-        }
-  
-        offer.sdp = sections.join('m=');
-      },
-      generateSdpFragment(offerData, candidates) {
-        const candidatesByMedia = {};
-        for (const candidate of candidates) {
-          const mid = candidate.sdpMLineIndex;
-          if (candidatesByMedia[mid] === undefined) {
-            candidatesByMedia[mid] = [];
-          }
-          candidatesByMedia[mid].push(candidate);
-        }
-  
-        let frag = 'a=ice-ufrag:' + offerData.iceUfrag + '\r\n' + 'a=ice-pwd:' + offerData.icePwd + '\r\n';
-        let mid = 0;
-  
-        for (const media of offerData.medias) {
-          if (candidatesByMedia[mid] !== undefined) {
-            frag += 'm=' + media + '\r\n' + 'a=mid:' + mid + '\r\n';
-  
-            for (const candidate of candidatesByMedia[mid]) {
-              frag += 'a=' + candidate.candidate + '\r\n';
-            }
-          }
-          mid++;
-        }
-  
-        return frag;
-      },
-      
-      start() {
-        console.log(new Date() - 0, "Requesting ICE servers");
-        const url = new URL('whep', this.streamLocation); // + window.location.search;
-
-        fetch(url, { method: 'OPTIONS' })
-          .then(res => this.onIceServers(res))
-          .catch(err => {
-            console.log(new Date() - 0, 'Error:', err);
-            this.scheduleRestart();
-          });
-      },
-
-      onIceServers(res) {
-        this.pc = new RTCPeerConnection({
-          iceServers: this.linkToIceServers(res.headers.get('Link')),
-        });
-
-        const direction = "sendrecv";
-        //const direction = "recvonly"
-        this.pc.addTransceiver("video", { direction });
-        //this.pc.addTransceiver("audio", { direction });
-
-        this.pc.onicecandidate = (evt) => this.onLocalCandidate(evt);
-        this.pc.oniceconnectionstatechange = () => this.onConnectionState();
-
-        this.pc.ontrack = (evt) => {
-          evt.track.onended = () =>
-          {
-            this.$refs.videoElement.pause()
-          }
-
-          this.$refs.videoElement.srcObject = evt.streams[0];
-          this.$refs.videoElement.muted = true;
-          this.$refs.videoElement.play();
-        };
-
-        this.pc.createOffer()
-          .then((offer) => this.onLocalOffer(offer))
-          .catch(err => console.error("Create Offer Error:", err));
-      },
-      /*onIceServers(res) {
-        this.pc = new RTCPeerConnection({
-          iceServers: this.linkToIceServers(res.headers.get('Link')),
-        });
-
-        const direction = "sendrecv";
-        this.pc.addTransceiver("video", { direction });
-
-        this.pc.onicecandidate = (evt) => this.onLocalCandidate(evt);
-        this.pc.oniceconnectionstatechange = () => this.onConnectionState();
-
-        this.pc.ontrack = (evt) => {
-          evt.track.onended = () => {
-            this.$refs.videoElement.pause();
-          };
-
-          this.$refs.videoElement.srcObject = evt.streams[0];
-          this.$refs.videoElement.muted = true;
-          this.$refs.videoElement.play();
-        };
-
-        const worker = new Worker(this.workerURL);
-        const channel = new MessageChannel();
-
-        const receiver = this.pc.getReceivers().find(r => r.track.kind === 'video');
-        if (receiver) {
-          receiver.transform = new RTCRtpScriptTransformer(
-            worker,
-            { port: channel.port2 },
-            [channel.port2]
-          );
-        }
-
-        this.pc.createOffer()
-          .then((offer) => this.onLocalOffer(offer))
-          .catch(err => console.error("Create Offer Error:", err));
-      },*/
-
-      onLocalOffer(offer) {
-        this.editOffer(offer);
-
-        this.offerData = this.parseOffer(offer.sdp);
-        this.pc.setLocalDescription(offer);
-
-        console.log(new Date() - 0, "Sending offer");
-        const url = new URL('whep', this.streamLocation); // + window.location.search;
-
-        fetch(url, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/sdp',
-          },
-          body: offer.sdp,
-        })
-        .then(res => {
-          if (res.status !== 201) {
-            //console.log("hello")
-            throw new Error('Bad status code');
-          }
-          this.eTag = res.headers.get('ETag');
-          this.sessionUrl = new URL(res.headers.get('location'), this.streamLocation).toString();
-
-          console.log(new Date() - 0, "Session URL:", this.sessionUrl);
-          console.log(new Date() - 0, "eTag:", this.eTag);
-          return res.text();
-        })
-        .then(sdp => this.onRemoteAnswer(new RTCSessionDescription({
-          type: 'answer',
-          sdp,
-        })))
-        .catch(err => {
-          console.log(new Date() - 0, 'Error:', err);
-          this.scheduleRestart();
-        });
-      },
-
-      onConnectionState() {
-        console.log(new Date() - 0, "Connection State Change:", this.pc.iceConnectionState)
-        if (this.restartTimeout !== null) {
-          return;
-        }
-
-        // This section is critical for stream startup latency
-        // Essentially it signals to the stream provider (the pi) has missed a frame.
-        // (an RTCP Picture Loss Indication (PLI) message to request an initial keyframe immediately)
-        // This should trick the pi into sending a keyframe, thus immediately starting the stream on load
-        // Without this, the frontend may have to wait 1-2 keyframe intervals
-        // And we want to keep the interval high so that datarate can be lower 
-        if (this.pc.iceConnectionState === "connected") {
-          console.log(new Date() - 0, "ICE Connection State is connected, requesting initial keyframe");
-        }
-
-        if (this.pc.iceConnectionState === "disconnected") {
-          console.log(new Date() - 0, "Disconnected...")
-          this.scheduleRestart();
-        }
-      },
-
-      onRemoteAnswer(answer) {
-        if (this.restartTimeout !== null) {
-          return;
-        }
-
-        this.pc.setRemoteDescription(answer);
-
-        if (this.queuedCandidates.length > 0) {
-          this.sendLocalCandidates(this.queuedCandidates);
-          this.queuedCandidates = [];
-        }
-      },
-
-      onLocalCandidate(evt) {
-        if (this.restartTimeout !== null) {
-          return;
-        }
-
-        if (evt.candidate) {
-          if (this.IS_RASPBERRY_PI)
-          {
-            if (this.eTag === '') {
-              this.queuedCandidates.push(evt.candidate);
-            } else {
-              this.sendLocalCandidates([evt.candidate]);
-            }
-          }
-          else
-          {
-              if (this.sessionUrl === '') {
-                this.queuedCandidates.push(evt.candidate);
-              } else {
-                this.sendLocalCandidates([evt.candidate]);
-              }
-          }
-        }
-      },
-
-      sendLocalCandidates(candidates) {
-        //const url = new URL('whep', this.streamLocation); // + window.location.search;
-        const url = this.sessionUrl;
-
-        let headers = {
-          'Content-Type': 'application/trickle-ice-sdpfrag',
-          'If-Match': "*",
-        }
-        if (this.IS_RASPBERRY_PI)
+      this.ws.binaryType = 'arraybuffer';
+      this.ws.onopen = function() {
+        
+        console.log("Video websocket opened")
+      }
+      this.ws.onmessage = function(event) {
+        if (jmuxer)
         {
-          headers = {
-            'Content-Type': 'application/trickle-ice-sdpfrag',
-            'If-Match': this.eTag,
-          }
+          jmuxer.feed({ video: new Uint8Array(event.data) });
         }
+      };
+      this.ws.onerror = (error) => {
+        console.error('Video WebSocket error:', error);
+        this.ws.close()
+      };
 
-        // If you are catching request errors from /cam/whep here, use this.IS_RASPBERRY_PI to flip to a potentially working version
-        fetch(url, {
-          method: 'PATCH',
-          headers: headers,
-          body: this.generateSdpFragment(this.offerData, candidates),
-        })
-        .then(res => {
-          if (res.status !== 204) {
-            throw new Error('Bad status code', res);
-          }
-        })
-        .catch(err => {
-          console.log(new Date() - 0, 'Local Candidate Error:', err);
-          this.scheduleRestart();
-        });
-      },
-
-      scheduleRestart() {
-        if (this.restartTimeout !== null) {
-          return;
-        }
-
-        if (this.pc) {
-          this.pc.close();
-          this.pc = null;
-        }
-
-        this.restartTimeout = setTimeout(() => {
-
-          this.restartTimeout = null;
-          this.start();
-        }, this.restartPause);
-
-        if (this.sessionUrl) {
-            fetch(this.sessionUrl, {
-                method: 'DELETE',
-            })
-                .then((res) => {
-                    if (res.status !== 200) {
-                        throw new Error('bad status code');
-                    }
-                })
-                .catch((err) => {
-                    console.log(new Date() - 0, 'delete session error: ' + err);
-                });
-        }
-        this.eTag = '';
-        this.sessionUrl = '';
-        this.queuedCandidates = [];
+      this.ws.onclose = () => {
+        console.log('Video WebSocket connection closed, restarting soon');
+        setTimeout(() => {
+          console.log('Reconnecting video WebSocket...');
+          this.setupWebsocket();
+        }, this.VIDEO_WEBSOCKET_RESTART_INTERVAL);
       }
-    },
-
-    beforeUnmount() {
-      if (this.pc) {
-        this.pc.close();
-      }
-      if (this.restartTimeout) {
-        clearTimeout(this.restartTimeout);
-      }
-    },
-
-    mounted() {
-      this.$refs.videoElement.onplay = this.onplay
-      this.$refs.videoElement.onpause = this.onpause
-      // EDIT AS NEEDED
-      this.start();
-    },
-    beforeUnmount() {
-      if (this.pc !== null) {
-        this.pc.close();
-        this.pc = null;
-      }
-      clearTimeout(this.restartTimeout);
     }
-  };
-</script>
-  
-<style scoped>
-  #video {
-    /* Add styles for your video element here */
-    width: 100%;
-    height: auto;
-    top: 50%;
-    transform: translateY(-50%);
-    position: absolute;
+  },
+
+  mounted() {
+    this.$refs.videoElement.src = this.streamLocation
+    this.$refs.videoElement.onplay = this.onplay;
+    this.$refs.videoElement.onpause = this.onpause;
+
+    this.jmuxer = new JMuxer({
+        node: 'video',
+        mode: 'video',
+        flushingTime: 0,
+        clearBuffer: true,
+        //debug: true,
+        fps: 30,
+    })
+
+    this.setupWebsocket(this.jmuxer);
   }
+};
+</script>
+
+<style scoped>
+#video {
+  width: 100%;
+  height: auto;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+}
 </style>
-  
