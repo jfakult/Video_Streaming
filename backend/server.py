@@ -47,9 +47,9 @@ camera = init_camera(arducam_config)
 '''
 
 ### STREAMING CONSTANTS
-STREAM_BITRATE = 2000000
-STREAM_KEYFRAME_INTERVAL = 120
-STREAM_DESIRED_LATENCY = 5
+STREAM_BITRATE = 7000000
+STREAM_KEYFRAME_INTERVAL = 45
+#STREAM_DESIRED_LATENCY = 5
 
 # Constants
 LIBCAMERA_IN_PORT = 5000
@@ -132,10 +132,10 @@ async def capture_frames():
     udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     udp_sock.bind(("0.0.0.0", 5000))
 
-    STREAM_KEYFRAME_SIZE_FACTOR = 10   # Keyframes are big, make sure the buffer doesn't overflow
-    buffer_size = int((STREAM_BITRATE / 8) * STREAM_DESIRED_LATENCY * STREAM_KEYFRAME_SIZE_FACTOR)
+    STREAM_KEYFRAME_SIZE_FACTOR = 50   # Keyframes are big, make sure the buffer doesn't overflow
+    buffer_size = int((STREAM_BITRATE / 8) * STREAM_KEYFRAME_SIZE_FACTOR)
     
-    #udp_sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, buffer_size)
+    udp_sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, buffer_size)
     #udp_sock.settimeout(STREAM_KEYFRAME_INTERVAL / 30)  # Small timeout to prevent blocking
 
     print("Setting UDP buffer size to", buffer_size / (1024*1024), "MB")
@@ -149,7 +149,7 @@ async def capture_frames():
                 continue
             
             try:
-                data, addr = udp_sock.recvfrom(2 ** 16)
+                data, addr = udp_sock.recvfrom(2 ** 18)  # 2**15 ~= 16K which should be larger than UDP MTU
             except socket.timeout:
                 print("Socket read timeout")
                 continue
@@ -167,8 +167,10 @@ async def capture_frames():
 
             buffer.extend(data)
 
+            nal_units = []
             while True:
                 start_pos = buffer.find(start_code)
+                #print(start_pos, len(buffer))
                 if start_pos == -1:
                     break
 
@@ -176,7 +178,15 @@ async def capture_frames():
                 if end_pos == -1:
                     break
 
-                nal_unit = buffer[start_pos:end_pos]
+                nal_units.append(buffer[start_pos:end_pos])
+
+                buffer = buffer[end_pos:]
+
+            # It should always be one. Will monitor this for a while and simplify if it really is
+            #if len(nal_units) > 1:
+                #print("UH OH, got more than 1 NAL unit. That shouldn't happen!")
+
+            for nal_unit in nal_units:
                 for websocket in clients:
                     try:
                         await websocket.send(nal_unit)
@@ -184,7 +194,6 @@ async def capture_frames():
                         print(f"WebSocket connection error: {e}")
                         clients.remove(websocket)
 
-                buffer = buffer[end_pos:]
     except Exception as e:
         print("Error sending h264 data", e)
     finally:

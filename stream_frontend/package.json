@@ -17,6 +17,7 @@
     "@ffmpeg/ffmpeg": "^0.12.7",
     "@ffmpeg/util": "^0.12.1",
     "@quasar/extras": "^1.16.4",
+    "jmuxer": "^2.0.5",
     "quasar": "^2.6.0",
     "vite-bundle-visualizer": "^1.2.1",
     "vue": "^3.0.0",
