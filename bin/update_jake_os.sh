@@ -18,4 +18,5 @@ cp $ROOT/.bashrc .
 cp $ROOT/.zshrc .
 cp -r $ROOT/bin .
 
+echo "Saving git repositories"
 git pull && git add . && git commit -m "Update packages and services" && git push

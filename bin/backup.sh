@@ -29,13 +29,21 @@
 ###  FEEL FREE TO CHANGE THESE LINES OF THE SCRIPT  ###
 #######################################################
 
+# Check if the script is running as root
+if [[ $EUID -ne 0 ]]
+then
+    echo "!!!  This script must be run as root  !!!"
+    exit
+fi
+
+# If you want to mount extra drives to backup
 #mount /dev/nvme0n1p3 /mnt/windows/
 
 # To check systemd timers, if launching this script
 # systemctl list-timers
 
 # $backupDir SHOULD BE DEFINED IN YOUR /etc/fstab, WITH THE noauto OPTION
-#backupDir="/backup"
+backupDir="/backup"
 
 # No trailing or preceding slash
 backupFolder="framework"
@@ -67,24 +75,16 @@ exclude=( "node_modules/" "cache/" ".cache/" )
 # Show progress bars
 rsyncParams="--delete --info=progress2 --info=name0"
 
-update_jake_os.sh
+# Prune orphan packages
+echo "!!!  Pruning orphan packages  !!!"
+pacman -Qdtq | pacman -Rns - 2>/dev/null
 
-
-
-
-
+sudo -u jake /home/jake/bin/update_jake_os.sh
 
 
 ##############################################################
 ###  THE REST OF THIS SCRIPT SHOULD NOT NEED MODIFICATION  ###
 ##############################################################
-
-# Check if the script is running as root
-if [[ $EUID -ne 0 ]]
-then
-    echo "!!!  This script must be run as root  !!!"
-    exit
-fi
 
 
 # Mount the backup drive
@@ -109,10 +109,6 @@ fi
 
 echo "!!!  Starting Backup to $backupDir/$backupFolder  !!!"
 
-
-# Prune orphan packages
-echo "!!!  Pruning orphan packages  !!!"
-pacman -Qtdq | pacman -Rns -
 
 # Extra info for potentially unused packages:
 # Remove "--print" to remove them
