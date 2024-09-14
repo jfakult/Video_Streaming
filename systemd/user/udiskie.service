@@ -1,0 +1,13 @@
+# https://github.com/hrehfeld/udiskie-systemd
+
+[Unit]
+Description=Handle automounting of usb devices
+
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/udiskie
+ExecStop=/usr/bin/pkill -f udiskie
+
+[Install]
+WantedBy=multi-user.target

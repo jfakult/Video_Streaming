@@ -1,0 +1,219 @@
+icon: &icon
+  font: "HackNerdFont:pixelsize=28"
+
+background_color: &background_color 114444FF
+text_color: &text_color FFFFEEFF
+text_color_dim: &text_color_dim 99BB99FF
+text_color_error: &text_color_error FF5522FF
+
+# friendly light pink
+mic_color: &mic_color FFB6C1FF
+
+# warm orange
+cpu_color: &cpu_color ED724EFF
+
+# friendly bright purple
+ssid_color: &ssid_color AC94F4FF
+
+# friendly light green
+bitrate_color: &bitrate_color 82C682FF
+
+# fonts we'll be re-using here and there
+hackfont: &hackfont HackNerdFont:style=solid:pixelsize=28
+
+std_underline: &std_underline {underline: { size: 2, color: FFFFCCFF}}
+
+bar:
+  location: bottom
+  height: 48
+  font: *hackfont
+  background: *background_color
+  spacing: 20
+
+  left:
+    - i3:
+        anchors: # Not used (directly) by f00bar; used here to avoid duplication
+          - string: &i3_common {margin: 8, on-click: {left: "swaymsg --quiet workspace {name}", wheel-up: "swaymsg workspace prev_on_output", wheel-down: "swaymsg workspace next_on_output"}}
+          - string: &default {<<: *i3_common, text: "{name}"}
+          - focused: &focused
+              deco: {stack: [background: {color: ffa0a04c}, <<: *std_underline]}
+              text: "{name}"
+          - invisible: &invisible {foreground: ffffff55}
+          - urgent: &urgent
+              foreground: 000000ff
+              deco: {stack: [background: {color: bc2b3fff}, <<: *std_underline]}
+          - map: &i3_mode
+              default:
+                - string:
+                    margin: 5
+                    text: "{mode}"
+                    deco: {background: {color: cc421dff}}
+                - empty: {right-margin: 7}
+              conditions:
+                mode == default: {empty: {}}
+        content:
+          "":
+            map:
+              conditions:
+                state == focused:   {string: {<<: [*focused, *default]}}
+                state == unfocused: {string: {<<: *default}}
+                state == invisible: {string: {<<: [*invisible, *default]}}
+                state == urgent:    {string: {<<: [*urgent, *default]}}
+
+
+  right:
+    - pipewire:
+        foreground: *text_color
+        anchors:
+          volume: &volume
+            conditions:
+              type == "sink" && ~muted:
+                - string: {text: "\uF130 ", <<: *icon, foreground: *mic_color, on-click: { left: "~/bin/set_volume.sh mute", wheel-down: "~/bin/set_volume.sh 1%+", wheel-up: "~/bin/set_volume.sh 1%-" }}
+                - string: {text: "{cubic_volume}%", on-click: { left: "~/bin/set_volume.sh mute", wheel-down: "~/bin/set_volume.sh 1%+", wheel-up: "~/bin/set_volume.sh 1%-"}}
+              type == "sink" && muted:
+                - string: {text: "\uF131  ", <<: *icon, foreground: *text_color_dim, on-click: { left: "~/bin/set_volume.sh mute", wheel-down: "~/bin/set_volume.sh 1%+", wheel-up: "~/bin/set_volume.sh 1%-" }}
+                - string: {text: "{cubic_volume}%", foreground: *text_color_dim, on-click: { left: "~/bin/set_volume.sh mute", wheel-down: "~/bin/set_volume.sh 1%+", wheel-up: "~/bin/set_volume.sh 1%-"}}
+        content:
+          map:
+            <<: *volume
+
+    - cpu:
+          poll-interval: 4000
+          content:
+            map:
+              conditions:
+                id < 0:
+                  - string: {text: "\uf4bc", font: *hackfont, foreground: *cpu_color}
+                  - string: {text: " {cpu}%", foreground: *text_color}
+
+    - mem:
+        poll-interval: 4000
+        content:
+          - string: {text: "\uEE02", foreground: *cpu_color}
+          - string: {text: " {used:mb}MB", foreground: *text_color}
+
+    - removables:
+        content:
+          map:
+            conditions:
+              mounted:
+                string:
+                  on-click: sh -c 'notify-send "{device}" "`udisksctl mount -b {device}`"'
+                  text: "\uF0C7 {label}"
+                  foreground: *text_color
+              ~mounted:
+                string:
+                  on-click: sh -c 'notify-send "{device}" "`udisksctl unmount -b {device}`"'
+                  text: "\uF62B {label}"
+                  foreground: *text_color_dim
+                  # deco: {underline: {size: 1, color: BFFF00FF}}
+
+    - network:
+        poll-interval: 8000
+        content:
+          - map:
+              conditions:
+                name == wlan0:
+                  map:
+                    conditions:
+                    # unknown, not present, down, lower layers down, testing, dormant
+                      state == down || state == unknown || state == not-present || state == lower-layer-down || state == testing || state == dormant:
+                        - string: {text: "\uF4AD", <<: *icon, foreground: *ssid_color, on-click: "~/bin/wifi.sh"}
+                        - string: {text: " offline", foreground: *text_color_dim, on-click: "~/bin/wifi.sh"}
+                      state == up:
+                        - ramp:
+                            tag: signal
+                            min: -90
+                            max: -30
+                            items:
+                              # - string: {text: "\U000F0928", foreground: "5FD7FFFF"}
+                              # - string: {text: "\U000F0925", foreground: "5FD7FFFF"}
+                              # - string: {text: "\U000F0922", foreground: "5FD7FFFF"}
+                              # - string: {text: "\U000F091F", foreground: "5FD7FFFF"}
+                              # - string: {text: "\U000F092F", foreground: "5FD7FFFF"}
+                              - string: {text: "\U000F08FE", foreground: *ssid_color, <<: *icon, on-click: "~/bin/wifi.sh"}
+                              - string: {text: "\U000F08F4", foreground: *ssid_color, <<: *icon, on-click: "~/bin/wifi.sh"}
+                              - string: {text: "\U000F08F6", foreground: *ssid_color, <<: *icon, on-click: "~/bin/wifi.sh"}
+                              - string: {text: "\U000F08F8", foreground: *ssid_color, <<: *icon, on-click: "~/bin/wifi.sh"}
+                              - string: {text: "\U000F08FA", foreground: *ssid_color, <<: *icon, on-click: "~/bin/wifi.sh"}
+                        - string: {text: " {ssid}", foreground: *text_color, on-click: "~/bin/wifi.sh"}
+                      default:
+                        - string: {text: "\uF254", <<: *icon, foreground: *ssid_color, on-click: "~/bin/wifi.sh"}
+                        - string: {text: " {ssid}", foreground: *text_color, on-click: "~/bin/wifi.sh"}
+
+    # Show ipv4 address (or ipv6 if no ipv4)
+    - network:
+        poll-interval: 30000
+        content:
+          - map:
+              conditions:
+                name == wlan0:
+                  map:
+                    conditions:
+                      state == up:
+                        - string: {text: "({ipv4})", foreground: *text_color, on-click: "~/bin/wifi.sh"}
+                      default:
+                        - string: {text: "({ipv6})", foreground: *text_color, on-click: "~/bin/wifi.sh"}
+
+    # Show upload and download speed
+    - network:
+        poll-interval: 4000
+        content:
+          - map:
+              conditions:
+                name == wlan0:
+                  map:
+                    conditions:
+                      state == up:
+                        - string: {text: " \uF093", foreground: *bitrate_color}
+                        - string: {text: " {ul-speed:mb}", foreground: *text_color}
+                        - string: {text: " \uF019", foreground: *bitrate_color}
+                        - string: {text: " {dl-speed:mb}", foreground: *text_color}
+                      default:
+                        - string: {text: " \uF093", foreground: *bitrate_color}
+                        - string: {text: " 0", foreground: *text_color}
+                        - string: {text: " \uF019", foreground: *bitrate_color}
+                        - string: {text: " 0", foreground: *text_color}
+
+    - clock:
+        foreground: FFD787FF
+        time-format: "%a %b %d, %H:%M"
+        content:
+          - string: {text: "{time}", foreground: *text_color, on-click: "galendae"}
+
+    - battery:
+        name: BAT1
+        poll-interval: 10000
+        anchors:
+          discharging: &discharging
+            list:
+              items:
+                - ramp:
+                    tag: capacity
+                    min: 0
+                    max: 90
+                    items:
+                      - string: {text: ' ', foreground: ffa600ff, <<: *icon, on-click: { left: "~/bin/power/set_power_profile.sh"}}
+                      - string: {text: ' ', foreground: ff0000ff, <<: *icon, on-click: { left: "~/bin/power/set_power_profile.sh"}}
+                      - string: {text: ' ', <<: *icon, on-click: { left: "~/bin/power/set_power_profile.sh"}}
+                      - string: {text: ' ', <<: *icon, on-click: { left: "~/bin/power/set_power_profile.sh"}}
+                      - string: {text: ' ', <<: *icon, on-click: { left: "~/bin/power/set_power_profile.sh"}}
+                      - string: {text: ' ', <<: *icon, on-click: { left: "~/bin/power/set_power_profile.sh"}}
+                      - string: {text: ' ', <<: *icon, on-click: { left: "~/bin/power/set_power_profile.sh"}}
+                      - string: {text: ' ', foreground: bfff00ff, <<: *icon, on-click: { left: "~/bin/power/set_power_profile.sh"}}
+                      - string: {text: ' ', foreground: bfff00ff, <<: *icon, on-click: { left: "~/bin/power/set_power_profile.sh"}}
+                - string: {text: "{capacity}%", foreground: *text_color, on-click: { left: "~/bin/power/set_power_profile.sh"}}
+        content:
+          map:
+            conditions:
+              state == unknown:
+                <<: *discharging
+              state == discharging:
+                <<: *discharging
+              state == charging: &charging
+                - string: {text: '', foreground: bfff00ff, <<: *icon, on-click: { left: "~/bin/power/set_power_profile.sh"}}
+                - string: {text: "{capacity}%", on-click: { left: "~/bin/power/set_power_profile.sh"}}
+              state == full:
+                - string: {text: '', foreground: bfff00ff, <<: *icon, on-click: { left: "~/bin/power/set_power_profile.sh"}}
+                - string: {text: "{capacity}%", on-click: { left: "~/bin/power/set_power_profile.sh"}}
+              state == "not charging": *charging

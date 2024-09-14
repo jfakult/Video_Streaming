@@ -1,0 +1,44 @@
+ffmpeg version n6.1.1 Copyright (c) 2000-2023 the FFmpeg developers
+  built with gcc 13.2.1 (GCC) 20230801
+  configuration: --prefix=/usr --disable-debug --disable-static --disable-stripping --enable-amf --enable-avisynth --enable-cuda-llvm --enable-lto --enable-fontconfig --enable-frei0r --enable-gmp --enable-gnutls --enable-gpl --enable-ladspa --enable-libaom --enable-libass --enable-libbluray --enable-libbs2b --enable-libdav1d --enable-libdrm --enable-libfreetype --enable-libfribidi --enable-libgsm --enable-libharfbuzz --enable-libiec61883 --enable-libjack --enable-libjxl --enable-libmodplug --enable-libmp3lame --enable-libopencore_amrnb --enable-libopencore_amrwb --enable-libopenjpeg --enable-libopenmpt --enable-libopus --enable-libplacebo --enable-libpulse --enable-librav1e --enable-librsvg --enable-librubberband --enable-libsnappy --enable-libsoxr --enable-libspeex --enable-libsrt --enable-libssh --enable-libsvtav1 --enable-libtheora --enable-libv4l2 --enable-libvidstab --enable-libvmaf --enable-libvorbis --enable-libvpl --enable-libvpx --enable-libwebp --enable-libx264 --enable-libx265 --enable-libxcb --enable-libxml2 --enable-libxvid --enable-libzimg --enable-nvdec --enable-nvenc --enable-opencl --enable-opengl --enable-shared --enable-vapoursynth --enable-version3 --enable-vulkan
+  libavutil      58. 29.100 / 58. 29.100
+  libavcodec     60. 31.102 / 60. 31.102
+  libavformat    60. 16.100 / 60. 16.100
+  libavdevice    60.  3.100 / 60.  3.100
+  libavfilter     9. 12.100 /  9. 12.100
+  libswscale      7.  5.100 /  7.  5.100
+  libswresample   4. 12.100 /  4. 12.100
+  libpostproc    57.  3.100 / 57.  3.100
+Input #0, image2, from 'screen.jpg':
+  Duration: 00:00:00.04, start: 0.000000, bitrate: 70073 kb/s
+  Stream #0:0: Video: mjpeg (Baseline), 1 reference frame, yuvj420p(pc, bt470bg/unknown/unknown, center), 2560x1599 [SAR 1:1 DAR 2560:1599], 25 fps, 25 tbr, 25 tbn
+[out#0/null @ 0x5cca6eaf2640] No explicit maps, mapping streams automatically...
+[vost#0:0/wrapped_avframe @ 0x5cca6eaf3380] Created video stream from input stream 0:0
+Stream mapping:
+  Stream #0:0 -> #0:0 (mjpeg (native) -> wrapped_avframe (native))
+Press [q] to stop, [?] for help
+[in#0/image2 @ 0x5cca6eaef4c0] EOF while reading input
+[in#0/image2 @ 0x5cca6eaef4c0] Terminating demuxer thread
+[graph 0 input from stream 0:0 @ 0x5cca6eafda40] w:2560 h:1599 pixfmt:yuvj420p tb:1/25 fr:25/1 sar:1/1
+[Parsed_crop_0 @ 0x5cca6eaf3f00] w:2560 h:1599 sar:1/1 -> w:1280 h:800 sar:1/1
+Output #0, null, to 'pipe:':
+  Metadata:
+    encoder         : Lavf60.16.100
+  Stream #0:0: Video: wrapped_avframe, 1 reference frame, yuvj420p(pc, bt470bg/unknown/unknown, progressive, center), 1280x800 (0x0) [SAR 1:1 DAR 8:5], q=2-31, 200 kb/s, 25 fps, 25 tbn
+    Metadata:
+      encoder         : Lavc60.31.102 wrapped_avframe
+frame=    0 fps=0.0 q=-0.0 size=       0kB time=00:00:00.00 bitrate=N/A speed=N/A    [vist#0:0/mjpeg @ 0x5cca6eaf7640] Decoder thread received EOF packet
+[vist#0:0/mjpeg @ 0x5cca6eaf7640] Decoder returned EOF, finishing
+[vist#0:0/mjpeg @ 0x5cca6eaf7640] Terminating decoder thread
+No more output streams to write to, finishing.
+[out#0/null @ 0x5cca6eaf2640] All streams finished
+[out#0/null @ 0x5cca6eaf2640] Terminating muxer thread
+[out#0/null @ 0x5cca6eaf2640] Output file #0 (pipe:):
+[out#0/null @ 0x5cca6eaf2640]   Output stream #0:0 (video): 1 frames encoded; 1 packets muxed (480 bytes); 
+[out#0/null @ 0x5cca6eaf2640]   Total: 1 packets (480 bytes) muxed
+[out#0/null @ 0x5cca6eaf2640] video:0kB audio:0kB subtitle:0kB other streams:0kB global headers:0kB muxing overhead: unknown
+frame=    1 fps=0.0 q=-0.0 Lsize=N/A time=00:00:00.00 bitrate=N/A speed=   0x    
+[in#0/image2 @ 0x5cca6eaef4c0] Input file #0 (screen.jpg):
+[in#0/image2 @ 0x5cca6eaef4c0]   Input stream #0:0 (video): 1 packets read (350368 bytes); 1 frames decoded; 0 decode errors; 
+[in#0/image2 @ 0x5cca6eaef4c0]   Total: 1 packets (350368 bytes) demuxed
+[AVIOContext @ 0x5cca6eaf7e80] Statistics: 350368 bytes read, 0 seeks
