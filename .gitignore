@@ -1,5 +1,9 @@
 package-lock.json
 
+Code/
+chromium/
+melonDS/
+
 # VSCode
 *vscode*
 .vscode/*
