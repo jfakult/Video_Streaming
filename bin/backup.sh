@@ -43,7 +43,8 @@ fi
 # systemctl list-timers
 
 # $backupDir SHOULD BE DEFINED IN YOUR /etc/fstab, WITH THE noauto OPTION
-backupDir="/backup"
+# Backup dir in remote server
+backupDir="/mnt/backup"
 
 # No trailing or preceding slash
 backupFolder="framework"
@@ -123,10 +124,6 @@ echo "!!!  Starting Backup to $backupDir/$backupFolder  !!!"
 OPT="-aPh"
 date=`date "+%Y-%b-%d_%T"`
 
-# Save Pacman packages
-echo "!!!  Saving pacman packages to $backupDir/$backupFolder/$date/*pacman.txt  !!!"
-pacman -Qe > "/root/pacman/pacman.txt"
-pacman -Qm > "/root/pacman/non_pacman.txt"
 
 # To restore (with pacman, yay requires manual installation):
 # pacman -S --needed - < pacman.txt
