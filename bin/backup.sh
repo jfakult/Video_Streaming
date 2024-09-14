@@ -63,7 +63,7 @@ driveUUID="166cbbab-ff1d-4bc3-96e0-529b6c689613"
 # Do not put a trailing slash, I'm too lazy to parse that!
 # Use Absolute paths
 # "/mnt/windows/Users/jfaku/Desktop/AHK" "/mnt/windows/Users/jfaku/Documents/Personal" 
-targetFolders=( "/usr/local" "/etc" "/root" "/home" )
+targetFolders=( "/root" ) #"/usr/local" "/etc" "/root" "/home" )
 #targetFolders=( "/root/pacman" )
 
 # WHAT FOLDERS DO YOU WANT TO EXCLUDE (like .gitignore)
@@ -150,7 +150,7 @@ do
 
 	echo "!!!  Backup up folder '$folder' to '${SNAP}$date$folder'  !!!"
 
-	ssh $server -p $serverPort "mkdir -p $SNAP$date$folder"
+	ssh $server -p $serverPort "mkdir -p $SNAP$date" #
 	
 	#rsync $rsyncParams $excludeOpts $OPT $LINK "$folder" "${SNAP}$date$folder"
 
