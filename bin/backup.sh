@@ -29,6 +29,8 @@
 ###  FEEL FREE TO CHANGE THESE LINES OF THE SCRIPT  ###
 #######################################################
 
+echo "Run this as ./backup.sh new if you would like to fully create a new backup"
+
 # Check if the script is running as root
 if [[ $EUID -ne 0 ]]
 then
@@ -63,7 +65,7 @@ driveUUID="166cbbab-ff1d-4bc3-96e0-529b6c689613"
 # Do not put a trailing slash, I'm too lazy to parse that!
 # Use Absolute paths
 # "/mnt/windows/Users/jfaku/Desktop/AHK" "/mnt/windows/Users/jfaku/Documents/Personal" 
-targetFolders=( "/root" ) #"/usr/local" "/etc" "/root" "/home" )
+targetFolders=( "/usr/local" "/etc" "/root" "/home" )
 #targetFolders=( "/root/pacman" )
 
 # WHAT FOLDERS DO YOU WANT TO EXCLUDE (like .gitignore)
@@ -80,7 +82,7 @@ rsyncParams="--delete --info=progress2 --info=name0"
 echo "!!!  Pruning orphan packages  !!!"
 pacman -Qdtq | pacman -Rns - 2>/dev/null
 
-sudo -u jake /home/jake/bin/update_jake_os.sh
+# sudo -u jake /home/jake/bin/update_jake_os.sh
 
 
 ##############################################################
@@ -144,25 +146,41 @@ done
 echo "!!!  Preparing to transfer data  !!!"
 
 # Loop through the target folders and backup each
+
+echo "Opening SSH connection to $server"
+ssh -M -S /tmp/ssh-socket -o ControlPersist=600 -f -N $server -p $serverPort
+
+
+if [ "$1" == "new" ]
+then
+	echo "Creating new folder: $SNAP$date"
+	ssh -S /tmp/ssh-socket $server -p $serverPort "mkdir -p $SNAP$date"
+else
+	echo "Updating previous backup: $SNAP$date"
+
+	latest_backup='$(ls '$SNAP' | grep "-" | grep "_" | grep ":" | tail -1)'
+
+	ssh -S /tmp/ssh-socket $server -p $serverPort "mv $SNAP$latest_backup $SNAP$date"
+fi
+
 for folder in "${targetFolders[@]}"
 do
-	LINK="--link-dest=$LAST$folder/"
+	#LINK="--link-dest=$LAST$folder/"
 
 	echo "!!!  Backup up folder '$folder' to '${SNAP}$date$folder'  !!!"
 
-	ssh $server -p $serverPort "mkdir -p $SNAP$date" #
+	ssh -S /tmp/ssh-socket $server -p $serverPort "mkdir -p $SNAP$date$folder"
 	
 	#rsync $rsyncParams $excludeOpts $OPT $LINK "$folder" "${SNAP}$date$folder"
 
-
 	# For transfers over the web
-	rsync $rsyncParams $excludeOpts $OPT $LINK --rsh="ssh -p $serverPort" "$folder" "$server:${SNAP}$date$folder"
-	
-
+	rsync $rsyncParams $excludeOpts $OPT --rsh="ssh -S /tmp/ssh-socket -p $serverPort" "$folder" "$server:${SNAP}$date"
 done
 
-echo "!!!  Updating simlinks  !!!"
-ssh $server -p $serverPort "rm -f $LAST; ln -s ${SNAP}$date $LAST"
+ssh -S /tmp/ssh-socket -O exit $server -p $serverPort
+
+#echo "!!!  Updating simlinks  !!!"
+#ssh $server -p $serverPort "rm -f $LAST; ln -s ${SNAP}$date $LAST"
 
 echo "!!!  Backup complete!  !!!"
 echo "!!!  Unmounting backup drive  !!"

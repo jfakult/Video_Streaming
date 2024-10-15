@@ -62,10 +62,10 @@ output * {
 # resumed. It will also lock your screen before your computer goes to sleep.
 
 ### Idle configuration
-#exec_always --no-startup-id swayidle -w \
-#          timeout 120 "$HOME/bin/dim.sh" resume 'brightnessctl set $(cat /tmp/last_brightness)' \
-#          timeout 180 'swaymsg "output * power off"' resume 'swaymsg "output * power on"' \
-#          timeout 600 '$HOME/bin/sleep.sh'
+exec_always --no-startup-id swayidle -w \
+          timeout 120 "$HOME/bin/dim.sh" resume 'brightnessctl set $(cat /tmp/last_brightness)' \
+          timeout 180 'swaymsg "output * power off"' resume 'swaymsg "output * power on"' \
+          timeout 600 '$HOME/bin/sleep.sh'
 
 # Since swayidle doesn't listen for audio output
 exec_always --no-startup-id sway-audio-idle-inhibit

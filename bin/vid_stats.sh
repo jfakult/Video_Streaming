@@ -6,6 +6,7 @@ function show_stats {
         return
     fi
     echo "$file"
+    #ffprobe -show_format "$file"
     OUTPUT=$(ffprobe -show_format "$file" -v quiet | grep -P "duration|size")
     DURATION=$(echo "$OUTPUT" | grep "duration" | cut -d "=" -f 2)
     SIZE=$(echo "$OUTPUT" | grep "size" | cut -d "=" -f 2)

@@ -38,6 +38,7 @@ text_editor/theme/highlighting/breakpoint_color = Color(1, 0.47, 0.42, 1)
 text_editor/theme/highlighting/code_folding_color = Color(1, 1, 1, 0.27)
 text_editor/theme/highlighting/search_result_color = Color(1, 1, 1, 0.07)
 run/platforms/linuxbsd/prefer_wayland = true
+project_manager/default_renderer = "mobile"
 asset_library/available_urls = {
 "godotengine.org (Official)": "https://godotengine.org/asset-library/api"
 }
@@ -66,7 +67,7 @@ interface/editors/show_scene_tree_root_selection = true
 interface/editors/derive_script_globals_by_name = true
 docks/scene_tree/ask_before_deleting_related_animation_tracks = true
 _use_favorites_root_selection = false
-filesystem/file_server/port = 6010
+filesystem/file_server/port = 6008
 filesystem/file_server/password = ""
 editors/3d/manipulator_gizmo_size = 80
 editors/3d/manipulator_gizmo_opacity = 0.9
@@ -139,7 +140,11 @@ editors/3d_gizmos/gizmo_colors/joint_body_b = Color(0.6, 0.9, 1, 1)
 editors/3d_gizmos/gizmo_colors/fog_volume = Color(0.5, 0.7, 1, 1)
 text_editor/help/sort_functions_alphabetically = true
 metadata/script_setup_templates_dictionary = {
+"AudioStreamPlayer2D": "0NodeDefault",
 "CharacterBody2D": "0CharacterBody2DBasic Movement",
+"ColorRect": "0NodeDefault",
 "Label": "0NodeDefault",
-"Node2D": "0NodeDefault"
+"Node": "0NodeDefault",
+"Node2D": "0NodeDefault",
+"Panel": "0NodeDefault"
 }

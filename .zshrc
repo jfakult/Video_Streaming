@@ -13,6 +13,7 @@ compinit
 
 export ZSH_PLUGINS="/usr/share/zsh/plugins"
 
+alias automount="systemctl start udiskie --user"
 alias s="$HOME/bin/launch_sway.sh"
 alias shut="shutdown now"
 alias nordstart="sudo systemctl start nordvpnd && nordvpn connect"
