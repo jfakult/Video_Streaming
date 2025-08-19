@@ -3,6 +3,8 @@
 This repo contains code to be run on a raspberry pi with a camera attached and associated web frontend.
 Video can be streamed from the raspberry pi to a phone or computer.
 
+The backend is built with simple python. The camera system uses mediamtx and streaming is done via WebRTC. The frontend is built with VueJS + Quasar.
+
 # See some examples
 
 ![Check out the media page](media/README.md)
