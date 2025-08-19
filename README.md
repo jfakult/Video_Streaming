@@ -5,7 +5,7 @@ Video can be streamed from the raspberry pi to a phone or computer.
 
 # See some examples
 
-![Check out the media page](media/READEME.md)
+![Check out the media page](media/README.md)
 
 # Diagram
 
