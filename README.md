@@ -1,3 +1,12 @@
+# What is this Repo?
+
+This repo contains code to be run on a raspberry pi with a camera attached and associated web frontend.
+Video can be streamed from the raspberry pi to a phone or computer.
+
+# See some examples
+
+![Check out the media page](media/READEME.md)
+
 # Diagram
 
 ![An image of what's happening here](software_diagram.png)
