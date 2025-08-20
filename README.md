@@ -7,7 +7,7 @@ The backend is built with simple python. The camera system uses mediamtx and str
 
 # See some examples
 
-![Check out the media page](media/README.md)
+[Check out the media page](media/README.md)
 
 # Diagram
 
