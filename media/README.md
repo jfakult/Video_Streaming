@@ -12,6 +12,6 @@ A bald eagle from ~60m away (taken from the same location as the setup photo abo
 
 ### A few other MP4s:
 
-[Sandhill Cranes](sandhill_cranes_120_meters.mp4)
+[Sandhill Cranes doing their mating dance](sandhill_cranes_120_meters.mp4)
 
-[Bald Eagle Far](bald_eagle_150_meters.webm)
+[Bald Eagle from ~150m away](bald_eagle_150_meters.webm)
