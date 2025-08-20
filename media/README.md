@@ -8,7 +8,7 @@ The Raspberry Pi and camera are attached to a spotting scope with a 3D printed m
 
 A bald eagle from ~60m away (taken from the same location as the setup photo above)
 
-[Bald Eagle Close](bald_eagle_60_meters.gif)
+![Bald Eagle Close](bald_eagle_60_meters.gif)
 
 ### A few other MP4s:
 
