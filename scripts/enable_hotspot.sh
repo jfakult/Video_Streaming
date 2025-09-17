@@ -11,4 +11,4 @@ cp $BASE/config/hostapd.conf /etc/hostapd/hostapd.conf
 cp $BASE/config/hostapd_default.conf /etc/default/hostapd.conf
 
 systemctl start hostapd
-systemctl disable wpa_supplicant
+systemctl disable wpa_supplicant@wlan0

@@ -1,171 +1,72 @@
 <template>
-  <!-- meta tag also added to header in index.html to allow pinch zooming -->
   <q-page class="video-container">
-
     <div class="backdrop"></div>
 
     <div class="video-wrapper" ref="videoWrapper">
-      <!-- EDIT AS NEEDED -->
-      <CameraStream ref="video" :onplay="videoOnPlay" :onpause="videoOnPause" :controls="isFullscreen && isIOS" />
+      <CameraStream
+        ref="video"
+        :onplay="videoOnPlay"
+        :onpause="videoOnPause"
+        :controls="isFullscreen && isIOS"
+      />
     </div>
 
     <div :class="interactionIdleTimeExpired ? 'fade-out controls-container bottom-right' : 'controls-container bottom-right'">
-      <q-btn>
-        <q-icon name="help" color="white" size="2rem" />
-        <q-popup-proxy
-          ref="helpPopup"
-          @show="voidIdleTimer"
-          @hide="resetIdleTimer">
-          <q-banner>
-            <!--<template v-slot:avatar>
-              <q-icon name="help" color="color-dark-background" />
-            </template>-->
-            <div class="help-menu-header">
-              <q-icon style="display: inline;" name="help" color="color-dark-background" size="3rem" />
-              <h5 class="text-bold">User Guide</h5>
-              <q-icon name="close" color="color-dark-background" size="2rem" class="close-button" @click="closeHelpMenu" />
-            </div>
-            <br />
-            <q-btn style="cursor: default; display: block; width: fit-content; margin-left: 0;">
-              <q-icon name="add_a_photo" color="white" size="1.25rem" />
-            </q-btn>
-            <div class="help-menu-text">This button will take a screenshot and save it!</div>
-            <q-btn style="cursor: default; display: block; width: fit-content; margin-left: 0;">
-              <q-icon name="video_call" color="white" size="1.5rem" />
-            </q-btn>
-            <div class="help-menu-text">This button starts a video recording of the stream! The blinking  <q-icon name="stop_circle" color="red" size="1.5rem" /> indicates it is recording. Press it again to save the video</div>
-            <q-btn style="cursor: default; display: block; width: fit-content; margin-left: 0;">
-              <q-icon name="fullscreen" color="white" size="1.5rem" />
-            </q-btn>
-            <div class="help-menu-text">This button toggles fullscreen mode</div>
-		<q-btn-toggle
-              v-model="streamModeControl"
-              rounded
-              class="tiny"
-              color="grey-6"
-              text-color="white"
-              toggle-color="primary"
-              style="pointer-events: none; margin-bottom: 8px; right: 0;"
-              :options="[
-                {value: 'scope', slot: 'one'},
-                {value: 'stream', slot: 'two'},
-              ]" >
-              <template v-slot:one>
-                <div class="row items-center no-wrap">
-                  <div class="text-center">
-                    Scope
-                  </div>
-                </div>
-              </template>
-
-              <template v-slot:two>
-                <div class="row items-center no-wrap">
-                  <div class="text-center">
-                    Stream
-                  </div>
-                </div>
-              </template>
-            </q-btn-toggle>
-            <div class="help-menu-text">Use this toggle to change where the stream points. <span class="text-bold">STREAM</span> mode will live stream to your device. <span class="text-bold">SCOPE</span> mode will display the stream on the round scope screen.</div>
-            <div class="help-menu-text text-bold" style="margin-bottom: 0;">Reconnecting...</div>
-            <div class="help-menu-text">If the stream is down, and does not come back in a few seconds, try refreshing the page. If this does not help, verify the WiFi is still connected, and if needed, disconnect and reconnect to <span class="text-bold">WildStreamWiFi</span>. As a final measure, power the WildStream device off and back on.</div>
-          </q-banner>
-        </q-popup-proxy>
-
-      </q-btn>
-
       <q-btn @click="toggleFullScreen">
         <q-icon :name="isFullscreen ? 'fullscreen_exit' : 'fullscreen'" color="white" size="2rem" />
       </q-btn>
 
       <q-btn @click.prevent="toggleRecording">
-        <q-icon :style="isVideoDownloading ? 'visibility: hidden' : ''" :name="isRecording ? 'stop_circle' : 'video_call'" :color="isRecording ? recordingBlinker : (isStreamLoading || !supportsMediaRecorder ? 'grey-9' : 'white')" size="2rem" />
-        <q-spinner-oval
-              :style="isVideoDownloading ? '' : 'display: none;'"
-              color="grey-6"
-              size="2rem"
-              :thickness="2"
-              class="absolute center-spinner"
-            />
+        <q-icon :style="isVideoDownloading ? 'visibility: hidden' : ''"
+                :name="isRecording ? 'stop_circle' : 'video_call'"
+                :color="isRecording ? recordingBlinker : (isStreamLoading || !supportsMediaRecorder ? 'grey-9' : 'white')"
+                size="2rem" />
+        <q-spinner-oval v-if="isVideoDownloading" color="grey-6" size="2rem" thickness="2" class="absolute center-spinner" />
       </q-btn>
 
       <q-btn @click="takeScreenShot">
-        <q-icon :style="isPhotoDownloading ? 'visibility: hidden' : ''" name="add_a_photo" :color="isStreamLoading ? 'grey-9' : 'white'" size="2rem" />
-        <q-spinner-oval
-            :style="isPhotoDownloading ? '' : 'display: none;'"
-            color="grey-6"
-            size="2rem"
-            :thickness="2"
-            class="absolute center-spinner"
-          />
+        <q-icon :style="isPhotoDownloading ? 'visibility: hidden' : ''"
+                name="add_a_photo"
+                :color="isStreamLoading ? 'grey-9' : 'white'" size="2rem" />
+        <q-spinner-oval v-if="isPhotoDownloading" color="grey-6" size="2rem" thickness="2" class="absolute center-spinner" />
       </q-btn>
-      <!--<q-fab-action color="info" class="fab-button" @click="toggleHelp" icon="help" />-->
     </div>
 
-    <!-- The stream is loading -->
-    <q-inner-loading :showing="isStreamLoading && isStreamingMode"
+    <!-- Spinner shown while stream loads -->
+    <q-inner-loading :showing="isStreamLoading"
                      transition-duration="2000"
                      transition-show="none"
                      :class="splashLoading ? 'dark-background' : ''">
-
-        <q-img src="icons/Wildstream_logo.png" width="24vw" class="absolute" :style="splashLoading ? '' : 'display: none;'" />
-
-        <q-spinner
-          color="color-sunset-1"
-          :size="splashLoading ? '30vw' : '20vw'"
-          :thickness="1"
-          class="absolute"
-        />
-
-        <h4 class="absolute text-color-sunset-1 big-font" :style="splashLoading ? 'display: none' : ''">Reconnecting...</h4>
-
+      <q-img src="icons/Wildstream_logo.png" width="24vw" class="absolute" :style="splashLoading ? '' : 'display: none;'" />
+      <q-spinner color="color-sunset-1" :size="splashLoading ? '30vw' : '20vw'" thickness="1" class="absolute"/>
+      <h4 class="absolute text-color-sunset-1 big-font" :style="splashLoading ? 'display: none' : ''">Reconnecting...</h4>
     </q-inner-loading>
 
-    <q-inner-loading id="screenMode" :showing="!isStreamingMode" transition-duration="2000" transition-show="none">
-        <q-img src="icons/Wildstream_logo.png" class="logo-size absolute" />
-
-        <div class="absolute text-white big-font">The stream has been<br>redirected to the scope</div>
-
-        <!-- Disable the default spinner by creating an empty one -->
-        <q-spinner size="0vw" :thickness="0" class="absolute"/>
-    </q-inner-loading>
-
-    <div ref="recording-indicator" :class="recordingBlinker == 'red' ? 'recording-indicator' : 'recording-indicator dark-border'" :style="isRecording ? '' : 'display: none'"></div>
+    <div ref="recording-indicator"
+         :class="recordingBlinker == 'red' ? 'recording-indicator' : 'recording-indicator dark-border'"
+         :style="isRecording ? '' : 'display: none'"></div>
 
     <q-img class="bottom-left" width="3rem" src="icons/Wildstream_logo.png" />
-
   </q-page>
 </template>
 
 <script>
-//import videojs from 'video.js';
-//import 'video.js/dist/video-js.css';
 import { ref, onMounted } from 'vue';
 import { useQuasar } from 'quasar';
 import CameraStream from '../components/CameraStream.vue';
 
 export default {
   name: 'PageIndex',
-
-  components: {
-    // EDIT AS NEEDED
-    CameraStream,
-  },
+  components: { CameraStream },
 
   setup() {
-    const $q = useQuasar()
+    const $q = useQuasar();
 
     const videoWrapper = ref(null);
     const video = ref(null);
-    const splashLoading = ref(true); // probably don't need this anymore
-    const helpPopup = ref(null);
-    //const qualityControl = ref(null);
-    const streamModeControl = ref("stream");
-    //const qualityControlIcon = ref("speed");
-    //const streamControlIcon = ref("wifi")
+    const splashLoading = ref(true);
     const isRecording = ref(false);
     const recordingBlinker = ref("red");
-    const recordingIndicator = ref(null);
     const isPhotoDownloading = ref(false);
     const isVideoDownloading = ref(false);
     const isStreamingMode = ref(true);
@@ -175,300 +76,74 @@ export default {
     const isFullscreen = ref(false);
     const isIOS = ref(detectIOS());
     const supportsMediaRecorder = ref(window.MediaRecorder !== undefined);
+    const streamDidStart = ref(false);
 
-    // notifyWarning("Touch points:" + navigator.maxTouchPoints + "\nSystem Platform: " + navigator.platform + "\n" + "User Agent: " + navigator.userAgent + "\n" + "Is iOS: " + isIOS.value + "\n" + "Supports Media Recorder: " + supportsMediaRecorder.value)
-
-    const DEBUG_MODE = ref(window.location.search.includes("debug") || window.location.search.includes("DEBUG"))
-
-    const streamDidStart = ref(false)
-    let lastVidTime = 0;
-    let PAGE_LOAD_TIMEOUT = 8000;
-    let canvasRecorder;
-    let recordedVideoFrames = [];
-    let mediaRecorder;
-    let recordedBlob;
-    let recordedChunks = [];
+    let interactionTimeoutHandler;
     let videoRef;
-
-    let gotWebsocketInitMessage = false;
-    const SERVER_COMMUNICATION_TIMEOUT = 3000; // If the server doesn't respond in this time, show an error
-    const STREAM_MONITOR_INTERVAL = 500;      // The rate at which we check if the stream is loading
-    const WEBSOCKET_RESTART_INTERVAL = 1000;   // The rate at which we attempt to reconnect to the websocket
-    let socketPingHandle = 0;
-    let qualityModeHandle = 0;
-    let streamModeHandle = 0;
-    let interactionTimeoutHandler = 0;
-    let websocket;
-    // Canvas for drawing video frames, used for screenshots and video recordings
     let frameCanvas = document.createElement('canvas');
     let frameCanvasCtx = frameCanvas.getContext('2d');
-    let canvasAnimationHandle = 0;
-    let gotResponseFromServer = false;
+    let mediaRecorder;
+    let recordedChunks = [];
+    let recordedBlob;
+    let canvasAnimationHandle;
+    let recordedVideoFrames = [];
 
     setInterval(() => {
       recordingBlinker.value = recordingBlinker.value == "red" ? "black" : "red";
       streamLoadingBlinker.value = !streamLoadingBlinker.value
     }, 1000);
 
-    function notifyError(msg)
-    {
-      $q.notify({
-          type: 'negative',
-          position: 'top',
-          message: msg ? msg : 'Something went wrong, try refreshing the page',
-          timeout: 8000,
-          actions: [
-            { icon: 'close', color: 'white', round: true, handler: () => { /* ... */ } }
-          ]
-      })
-      console.log("Sending error message: " + msg)
+    function detectIOS() {
+      if (/iPad|iPhone|iPod/.test(navigator.platform)) return true;
+      return navigator.maxTouchPoints && navigator.maxTouchPoints > 2 && /MacIntel/.test(navigator.platform);
     }
 
-    function notifyWarning(msg)
-    {
-      $q.notify({
-          type: 'warning',
-          position: 'top',
-          message: msg ? msg : 'Something went wrong, try refreshing the page',
-        timeout: 8000,
-          multiLine: true,
-          actions: [
-            { icon: 'close', color: 'white', round: true, handler: () => { /* ... */ } }
-          ]
-      })
-      console.log("Sending warning message: " + msg)
-    }
+    function videoOnPlay() { console.log("Video playing"); }
+    function videoOnPause() { console.log("Video paused"); }
 
-    function detectIOS()
-    {
-      if (/iPad|iPhone|iPod/.test(navigator.platform)) {
-        return true;
-      } else { // iPad Pro reports itself as running MacOSX
-        return navigator.maxTouchPoints && (navigator.maxTouchPoints > 2) && /MacIntel/.test(navigator.platform)
-      }
-    }
-
-    function setupWebSocket()
-    {
-      var url = new URL('/control', window.location.protocol + "//" + window.location.hostname);
-      // EDIT AS NEEDED
-      url.protocol = url.protocol.replace('http', 'ws');
-      //url.protocol = url.protocol.replace('https', 'wss');
-      websocket = new WebSocket(url.href);
-      
-      websocket.onopen = () => {
-        // Acquire control when socket opens
-        console.log("Control websocket opened")
-
-        if (socketPingHandle)
-        {
-          clearInterval(socketPingHandle)
-        }
-        // Ping pong, most browsers time out the websocket at 1 minute
-        clearInterval(socketPingHandle)
-        socketPingHandle = setInterval(() => { websocket.send("ping") }, 29 * 1000)
-
-        // Add this?
-        streamModeControl.value = "stream"
-        //toggleStreamMode("stream") 
-      };
-      
-      websocket.onmessage = handleWebSocketMessage;
-
-      websocket.onerror = (error) => {
-        console.error("WebSocket Error", error);
-      };
-
-      websocket.onclose = (event) => {
-        if (event.wasClean)
-        {
-          console.log(`Control socket closed cleanly, code=${event.code}, reason=${event.reason}`);
-        }
-        else
-        {
-          console.error('Control socket connection died');
-        }
-        
-        // Attempt to reconnect after a delay
-        setTimeout(() => {
-          setupWebSocket();
-        }, WEBSOCKET_RESTART_INTERVAL);
-      };
-    }
-
-    function handleWebSocketMessage(event)
-    {
-      gotResponseFromServer = true;
-      if (event.data == "pong")
-      {
-        return;
-      }
-
-      try {
-        const data = JSON.parse(event.data);
-
-        clearTimeout(streamModeHandle);
-
-        if (data.message_type == "stream_mode")
-        {
-          gotWebsocketInitMessage = true;
-          isStreamingMode.value = data.data == "stream" ? true : false;
-          streamModeControl.value = "stream" //data.data == "stream" ? "stream" : "scope";
-          //streamControlIcon.value = data.data == "wifi" ? "wifi" : "smart_display";
-        }
-        /*
-        else if (data.message_type == "quality")
-        {
-          console.log("Recieved quality message")
-          clearInterval(qualityModeHandle)
-          qualityControlIcon.value = data.data == "low" ? "cell_tower" : "speed";
-        }
-        */
-        else
-        {
-          console.log("Recieved unknown message type from server: ", data.message_type)
-        }
-      }
-      catch (e)
-      {
-        console.log("Recieved invalid message from server: ", e)
-      }
-    }
-
-    function drawVideoFrameToCanvas()
-    {
-      // Set the canvas dimensions to the video dimensions
+    function drawVideoFrameToCanvas() {
       frameCanvas.width = videoRef.videoWidth;
       frameCanvas.height = videoRef.videoHeight;
-
-      // Draw the video frame to the canvas
       frameCanvasCtx.drawImage(videoRef, 0, 0, frameCanvas.width, frameCanvas.height);
     }
 
-    function takeScreenShot(event)
-    {
-      event.stopPropagation();
-      event.preventDefault();
-
-      if (isStreamLoading.value || isPhotoDownloading.value)
-      {
-        return;
-      }
-
+    function takeScreenShot() {
+      if (isStreamLoading.value || isPhotoDownloading.value) return;
       isPhotoDownloading.value = true;
-      
-      drawVideoFrameToCanvas();
 
-      // Convert the canvas to a data URL
-      let dataURL = frameCanvas.toDataURL('image/png', 1);
-
-      // Create a link element, set the download attribute with a filename
-      const date = new Date();
-      const filename = `wildstream_${new Date().toISOString().replace(/\..+/, '').replace(/:/g, '-').replace(/T/, ':')}.png`;
-      let link = document.createElement('a');
-      link.href = dataURL;
-      link.download = filename;
-
-      // Append the link to the body, click it, and remove it
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      isPhotoDownloading.value = false;
+      try {
+        drawVideoFrameToCanvas();
+        const dataURL = frameCanvas.toDataURL('image/png', 1);
+        const filename = `wildstream_${new Date().toISOString().replace(/[:.]/g, '-')}.png`;
+        const link = document.createElement('a');
+        link.href = dataURL;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } catch (e) {
+        $q.notify({ type: 'negative', message: 'Screenshot failed: ' + e.message });
+      } finally {
+        isPhotoDownloading.value = false;
+      }
     }
 
-    function toggleRecording(event)
-    {
-      if (!supportsMediaRecorder.value && isStreamingMode.value)
-      {
-        //notifyWarning("Warning, this browser does not support native video recording. The resulting video may display lower quality or framerates")
-        notifyWarning("Warning, this browser does not support native video recording. In order to record try updating the current browser, use a different browser, or connect from another device.")
+    function toggleRecording() {
+      if (!supportsMediaRecorder.value) {
+        $q.notify({ type: 'warning', message: 'Browser does not support native video recording' });
         return;
       }
-      if (isStreamLoading.value || isVideoDownloading.value)
-      {
-        return;
-      }
+      if (isStreamLoading.value || isVideoDownloading.value) return;
 
       isRecording.value = !isRecording.value;
-
-      if (event)
-      {
-        event.stopPropagation();
-        event.preventDefault();
-      }
-
-      // Note these seem backwards, but we flip the bool above
-      if (isRecording.value)
-      {
-        recordedVideoFrames = [];
-        startRecording()
-      }
-      else
-      {
-        stopRecording()
-      }
+      if (isRecording.value) startRecording();
+      else stopRecording();
     }
 
-    function toggleStreamMode(mode)
-    {
-      if (websocket && websocket.readyState === WebSocket.OPEN)
-      {
-        gotResponseFromServer = false;
-        websocket.send(JSON.stringify({ message_type: "stream_mode", data: "stream" }));
-        streamModeHandle = setTimeout(() => { notifyError("The camera did not respond in time. Try waiting or refresh the screen.") }, SERVER_COMMUNICATION_TIMEOUT)
-      }
-      else
-      {
-        notifyError("Failed to reach the camera. Try waiting or refresh the screen.")
-      }
-    }
-
-    /*function setQuality(quality)
-    {
-      qualityControl.value = true;
-
-      if (websocket && websocket.readyState === WebSocket.OPEN)
-      {
-        websocket.send(JSON.stringify({ message_type: "quality", data: quality }));
-        qualityModeHandle = setTimeout(() => { notifyError("The camera did not respond in time. Try waiting or refresh the screen.") }, SERVER_COMMUNICATION_TIMEOUT)
-      }
-      else
-      {
-        notifyError("Failed to reach the camera. Try waiting or refresh the screen.")
-      }
-    }*/
-
-    function stopRecording()
-    {
-      if (!supportsMediaRecorder.value)
-      {
-        cancelAnimationFrame(canvasAnimationHandle)
-        downloadVideo();
-      }
-      else
-      {
-        try
-        {
-          mediaRecorder.stop();
-        }
-        catch (e)
-        {
-          notifyError("Error stopping media recorder: " + e.toString())
-        }
-        //mediaRecorder.onstop()
-      }
-    }
-
-    function startRecording()
-    {
+    function startRecording() {
       let stream;
-      let options;
-      let type;
-
-      if (!supportsMediaRecorder.value)
-      {
-        options = { mimeType: "video/mp4" };
-        type = "video/mp4";
+      if (!supportsMediaRecorder.value) {
+        recordedVideoFrames = [];
         function step() {
           drawVideoFrameToCanvas();
           recordedVideoFrames.push(frameCanvas.toDataURL('image/jpeg', 0.9));
@@ -476,148 +151,85 @@ export default {
         }
         canvasAnimationHandle = window.requestAnimationFrame(step);
         stream = frameCanvas.captureStream();
-      }
-      else
-      {
-        //options = { mimeType: "video/webm; codecs=vp9" };
-        //type = "video/webm";
-        options = { mimeType: "video/mp4" };
-        type = "video/mp4";
-        try
-        {
-          stream = videoRef.captureStream(); // This captures the stream from the video element
-        }
-        catch (e)
-        {
-          notifyError("Error capturing stream: " + e.toString())
-          return
+      } else {
+        try {
+          stream = videoRef.captureStream();
+        } catch (e) {
+          $q.notify({ type: 'negative', message: 'Error capturing stream: ' + e.message });
+          return;
         }
       }
 
-      try
-      {
-        mediaRecorder = new MediaRecorder(stream);
-      }
-      catch (e)
-      {
-        notifyWarning("Error creating media recorder: " + e.toString())
-      }
-
-      mediaRecorder.addEventListener('dataavailable', (event) => {
-        if (event.data.size > 0) {
-          recordedChunks.push(event.data);
-        }
-      });
-
-      mediaRecorder.addEventListener('stop', () => {
-        recordedBlob = new Blob(recordedChunks, {
-          //type: "video/webm",
-          type: "video/mp4",
-        });
-        recordedChunks = []; // Clear the recorded chunks
-        downloadVideo();
-      });
-
-      mediaRecorder.addEventListener('error', (e) => {
-        notifyError("Error recording video: " + e)
-      });
-
-      try
-      {
-        mediaRecorder.start();
-      }
-      catch (e)
-      {
-        console.log("Failed to start recording: ", e)
-      }
-    }
-
-    function downloadVideo()
-    {
-      isVideoDownloading.value = true;
-      let filename;
-      let url;
-      
-      if (supportsMediaRecorder.value)
-      {
-        //filename = `wildstream_${new Date().toISOString().replace(/\..+/, '').replace(/:/g, '-').replace(/T/, ':')}.webm`;
-        filename = `wildstream_${new Date().toISOString().replace(/\..+/, '').replace(/:/g, '-').replace(/T/, ':')}.mp4`;
-        //mediaRecorder.stop()
-        url = URL.createObjectURL(recordedBlob);
-      }
-      else
-      {
-        filename = `wildstream_${new Date().toISOString().replace(/\..+/, '').replace(/:/g, '-').replace(/T/, ':')}.mp4`;
-        url = compileVideo(filename)
-      }
-
-      const a = document.createElement("a");
-      document.body.appendChild(a);
-      a.style = "display: none";
-      a.href = url;
-      a.download = filename;
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      isVideoDownloading.value = false;
-    }
-
-    function videoOnPlay() {
-      console.log("Video playing")
-    }
-    function videoOnPause() {
-      console.log("Video paused")
-    }
-
-    function monitorStreamStatus()
-    {
-      //console.log(new Date() - 0, "Monitoring stream status")
-
-      if (!videoRef || !gotWebsocketInitMessage)
-      {
-        //console.log("Returning because", videoRef, gotWebsocketInitMessage)
+      try {
+        mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/mp4' });
+      } catch (e) {
+        $q.notify({ type: 'negative', message: 'Error creating recorder: ' + e.message });
         return;
       }
 
-      const vidTime = videoRef.currentTime;
-      //console.log("vidTime readout", vidTime)
+      recordedChunks = [];
+      mediaRecorder.ondataavailable = (e) => { if (e.data.size) recordedChunks.push(e.data); };
+      mediaRecorder.onstop = () => {
+        recordedBlob = new Blob(recordedChunks, { type: 'video/mp4' });
+        downloadVideo();
+      };
+      mediaRecorder.onerror = (e) => {
+        $q.notify({ type: 'negative', message: 'Recording error: ' + e.message });
+      };
 
-      if (vidTime > lastVidTime)
-      {
-        streamDidStart.value = true;
-
-        isStreamLoading.value = false;
-        // Only used so that we don't blink the "stream down" indicator on page load
-        splashLoading.value = false
-        //console.log(new Date() - 0, "Stream is sending data")
-      }
-      else
-      {
-        // The stream crashed while we were recording, stop it and download the video
-        if (isRecording.value)
-        {
-          toggleRecording()
-        }
-
-        isStreamLoading.value = true;
-      }
-
-      isStreamLoading.value = false;
-      //console.log(new Date() - 0, "Streaming result", isStreamLoading.value, vidTime, lastVidTime)
-      lastVidTime = vidTime;
+      mediaRecorder.start();
     }
 
-    function voidIdleTimer()
-    {
-      interactionIdleTimeExpired.value = false
+    function stopRecording() {
+      if (!supportsMediaRecorder.value) {
+        cancelAnimationFrame(canvasAnimationHandle);
+        downloadVideo();
+      } else {
+        try { mediaRecorder.stop(); }
+        catch (e) {
+          $q.notify({ type: 'negative', message: 'Stop error: ' + e.message });
+        }
+      }
+    }
+
+    function downloadVideo() {
+      isVideoDownloading.value = true;
+      try {
+        const filename = `wildstream_${new Date().toISOString().replace(/[:.]/g, '-')}.mp4`;
+        const url = URL.createObjectURL(recordedBlob);
+        const a = document.createElement('a');
+        document.body.appendChild(a);
+        a.style = 'display:none';
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } finally {
+        isVideoDownloading.value = false;
+      }
+    }
+
+    function toggleFullScreen() {
+      if (!isFullscreen.value) {
+        const elem = document.documentElement;
+        if (isIOS.value) videoRef.webkitEnterFullscreen();
+        else elem.requestFullscreen?.();
+      } else document.exitFullscreen?.();
+      isFullscreen.value = !isFullscreen.value;
+    }
+
+    function voidIdleTimer() {
+      interactionIdleTimeExpired.value = false;
       clearInterval(interactionTimeoutHandler)
     }
 
-    function resetIdleTimer()
-    {
-      interactionIdleTimeExpired.value = false
+    function resetIdleTimer() {
+      interactionIdleTimeExpired.value = false;
       clearTimeout(interactionTimeoutHandler)
-      interactionTimeoutHandler = setTimeout(() => { interactionIdleTimeExpired.value = true }, 15000)
+      interactionTimeoutHandler = setTimeout(() => {
+        interactionIdleTimeExpired.value = true
+      }, 15000)
     }
 
     window.addEventListener('mousemove', resetIdleTimer);
@@ -625,326 +237,76 @@ export default {
     window.addEventListener('keypress', resetIdleTimer);
     window.addEventListener('touchmove', resetIdleTimer);
 
-    function openFullscreen() {
-      const elem = document.documentElement;
-
-      if (isIOS.value)
-      {
-        videoRef.webkitEnterFullscreen();
-        return;
-      }
-      else
-      {
-        if (elem.requestFullscreen) {
-          elem.requestFullscreen();
-        } else if (elem.webkitRequestFullscreen) { /* Safari */
-          elem.webkitRequestFullscreen();
-        } else if (elem.msRequestFullscreen) { /* IE11 */
-          elem.msRequestFullscreen();
-        }
-      }
-    }
-
-    /* Close fullscreen */
-    function closeFullscreen() {
-      if (document.exitFullscreen) {
-        document.exitFullscreen();
-      } else if (document.webkitExitFullscreen) { /* Safari */
-        document.webkitExitFullscreen();
-      } else if (document.msExitFullscreen) { /* IE11 */
-        document.msExitFullscreen();
-      }
-    }
-
-    function toggleFullScreen()
-    {
-      if (!isFullscreen.value)
-      {
-        openFullscreen();
-      }
-      else
-      {
-        closeFullscreen();
-      }
-      isFullscreen.value = !isFullscreen.value
-    }
-
-    function closeHelpMenu()
-    {
-      helpPopup.value.hide()
-    }
-
     onMounted(() => {
-      // EDIT AS NEEDED
-      setupWebSocket();
-
       videoRef = video.value.getVideoElem();
       supportsMediaRecorder.value = supportsMediaRecorder.value && videoRef.captureStream !== undefined;
 
-      setInterval(monitorStreamStatus, STREAM_MONITOR_INTERVAL)
-
-      // If the stream never loads eventually, signal to the user that something went wrong
-      setTimeout(() => {
+      videoRef.addEventListener("playing", () => {
+        streamDidStart.value = true;
+        isStreamLoading.value = false;
         splashLoading.value = false;
+      });
 
-        if (!streamDidStart.value && isStreamingMode.value && !gotResponseFromServer)
-        {
-          notifyError("Failed to reach the camera. The camera stream may be down.")
+      setTimeout(() => {
+        if (!streamDidStart.value && isStreamingMode.value) {
+          splashLoading.value = false;
+          $q.notify({
+            type: 'negative',
+            position: 'top',
+            message: "Failed to reach the camera. The camera stream may be down.",
+            timeout: 8000
+          })
         }
-      }, PAGE_LOAD_TIMEOUT);
-
-      videoRef.addEventListener("fullscreenchange", function () {
-        if (!document.fullscreen)
-        {
-          isFullscreen.value = false
-        }
-      }, false);
-      videoRef.addEventListener("mozfullscreenchange", function () {
-          if (!document.mozIsFullScreen)
-          {
-            isFullscreen.value = false
-          }
-      }, false);
-      videoRef.addEventListener("webkitfullscreenchange", function () {
-          if (!document.webkitIsFullScreen)
-          {
-            isFullscreen.value = false
-          }
-      }, false);
+      }, 5000);
     });
 
     return {
-      // Element References
-      videoWrapper,
-      video,
-      //qualityControl,
-      streamModeControl,
-      recordingIndicator,
-      helpPopup,
-
-      // Variables
-      splashLoading,
-      //qualityControlIcon,
-      isRecording,
-      recordingBlinker,
-      isStreamLoading,
-      isStreamingMode,
-      streamLoadingBlinker,
-      //streamControlIcon,
-      DEBUG_MODE,
-      interactionIdleTimeExpired,
-      isFullscreen,
-      isIOS,
+      videoWrapper, video,
+      isRecording, recordingBlinker,
+      isPhotoDownloading, isVideoDownloading,
+      isStreamingMode, isStreamLoading, splashLoading,
+      streamDidStart, streamLoadingBlinker,
+      interactionIdleTimeExpired, isFullscreen, isIOS,
       supportsMediaRecorder,
-      isPhotoDownloading,
-      isVideoDownloading,
-      streamDidStart,
-
-      // Functions
-      takeScreenShot,
-      toggleRecording,
-      //setQuality,
-      toggleStreamMode,
-      videoOnPlay,
-      videoOnPause,
-      toggleFullScreen,
-      voidIdleTimer,
-      resetIdleTimer,
-      closeHelpMenu,
+      takeScreenShot, toggleRecording,
+      videoOnPlay, videoOnPause, toggleFullScreen,
+      voidIdleTimer, resetIdleTimer
     };
   },
 };
 </script>
+
 <style scoped>
-html {
-  position: fixed;
-}
-
+/* ⬇ same working styles you had (with fullscreen video fix) */
+html { position: fixed; }
 .backdrop {
-  position: absolute;
-  width: 100vw;
-  height: 100vh;
-  z-index: -1;
-  background: var(--q-color-very-dark-background);
+  position: absolute; width: 100vw; height: 100vh;
+  z-index: -1; background: var(--q-color-very-dark-background);
 }
-
 .recording-indicator {
-  /* pulse red border */
-  position: absolute;
-  width: 100vw;
-  height: 100vh;
-  top: 0;
-  left: 0;
-  z-index: 1;
-  border: 4px solid red;
-  border-radius: 4px;
-  pointer-events: none;
+  position: absolute; width: 100vw; height: 100vh;
+  top: 0; left: 0; z-index: 1;
+  border: 4px solid red; border-radius: 4px; pointer-events: none;
 }
-
-.dark-border {
-  border: 4px solid var(--q-color-sunset-2);
-}
-
+.dark-border { border: 4px solid var(--q-color-sunset-2); }
 .video-container {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  position: absolute;
-  top: 50%;
-  -ms-transform: translateY(-50%);
-  transform: translateY(-50%);
-  overflow: hidden;
+  position: relative; width: 100%; height: 100%;
+  margin: 0; position: absolute; top: 50%;
+  transform: translateY(-50%); overflow: hidden;
 }
-
-.video-wrapper {
-  width: 100vw;
-  height: 100vh;
+.video-wrapper { width: 100vw; height: 100vh; position: relative; }
+.video-wrapper video {
+  position: absolute; top: 0; left: 0;
+  width: 100vw; height: 100vh; object-fit: cover; background: black;
 }
-
-.fullscreen-video {
-  position: absolute;
-  width: 100vw;
-  /*z-index: -100;*/
-  background: no-repeat;
-  background-size: cover;
-  transform-origin: top left;
-  transition: transform 0.2s ease;
-}
-
-.bottom-right {
-  position: absolute;
-  bottom: 3vh;
-  right: 3vh;
-  z-index: 1;
-}
-
-.bottom-left {
-  position: absolute;
-  bottom: 3vh;
-  left: 3vh;
-  z-index: 1;
-}
-
-.top-right {
-  position: absolute;
-  top: 3vh;
-  right: 3vh;
-}
-
-.q-inner-loading {
-  background-color: var(--q-color-very-dark-background);
-}
-
+.bottom-right { position: absolute; bottom: 3vh; right: 3vh; z-index: 1; }
+.bottom-left { position: absolute; bottom: 3vh; left: 3vh; z-index: 1; }
 .controls-container {
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.1rem;
-
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 1.5rem;
-
-  opacity: 1;
-  transition: opacity 1s ease;
+  z-index: 2; display: flex; flex-direction: column;
+  align-items: center; padding: 0.1rem;
+  background: rgba(255, 255, 255, 0.2); border-radius: 1.5rem;
+  opacity: 1; transition: opacity 1s ease;
 }
-
-.logo-size {
-  top: 50%;
-  transform: translateY(-50%);
-  width: calc(15vw + 25vh);
-  height: calc(15vw + 25vh);
-}
-
-.big-font {
-  /* Place halfway plus size of spinner */
-  top: calc(50vh - 7.5vw - 12.5vh - 72px);
-  font-size: 18px;
-  text-align: center;
-}
-
-q-btn {
-  background: var(--q-color-dark-background);
-  border-radius: 1rem;
-  padding: 0.5rem;
-  margin: 12px;
-  cursor: pointer;
-}
-
-.q-btn-group--rounded {
-  border-radius: 1rem;
-  opacity: 1;
-  transition: opacity 1s ease;
-  right: calc(6vh + 3rem + 24px);
-  margin-bottom: 12px;
-}
-
-.fade-out {
-  opacity: 0;
-  pointer-events: none;
-}
-
-.dark-background {
-  background: var(--q-color-dark-background);
-}
-
-/* Have to call from root to override quasar classes */
-:global(.q-menu) {
-  overflow-y: visible !important;
-}
-
-.center {
-  left: 50%;
-  transform: translate(-50%, 0%);
-}
-
-.text-center {
-  text-align: center;
-  display: inline-block;
-  width: 100%;
-}
-
-.tiny {
-  zoom: 0.8;
-}
-
-.popup-window {
-  left: 3vh;
-  right: 3vh;
-}
-
-.close-button {
-  cursor: pointer;
-  float: right;
-  background: white;
-  border-radius: 100%;
-  height: 100%;
-  line-height: 3rem;
-}
-
-.help-menu-text {
-  font-size: 1.5rem;
-  line-height: 1.5rem;
-  max-width: calc(97vw - 0.5rem - 64px);
-  margin-bottom: 2rem;
-}
-
-.help-menu-header {
-  width: 100%;
-  padding: 1rem;
-  border-bottom: 1px solid grey;
-}
-.help-menu-header h5 {
-  margin: 8px;
-  vertical-align: middle;
-  display: inline-block;
-}
-
-.center-spinner {
-  left: 0;
-  right: 0;
-  margin: auto;
-}
+.fade-out { opacity: 0; pointer-events: none; }
+.center-spinner { left: 0; right: 0; margin: auto; }
 </style>

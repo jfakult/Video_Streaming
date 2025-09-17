@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>WebRTC Viewer</title>
+</head>
+<body>
+  <video id="video" autoplay playsinline muted style="width: 80%; border: 2px solid black;"></video>
+
+  <script>
+    const pc = new RTCPeerConnection();
+
+    pc.oniceconnectionstatechange = () => {
+      console.log("[Client] ICE connection state:", pc.iceConnectionState);
+    };
+
+    pc.onicegatheringstatechange = () => {
+      console.log("[Client] ICE gathering state:", pc.iceGatheringState);
+    };
+
+    pc.onconnectionstatechange = () => {
+      console.log("[Client] Connection state:", pc.connectionState);
+    };
+
+    pc.ontrack = (event) => {
+      console.log("[Client] Track received:", event.track.kind);
+      document.getElementById("video").srcObject = event.streams[0];
+    };
+
+    pc.onicecandidate = (event) => {
+      if (event.candidate) {
+        console.log("[Client] ICE candidate gathered:", event.candidate);
+        candidates.push({
+          candidate: event.candidate.candidate,
+          sdpMid: event.candidate.sdpMid,
+          sdpMLineIndex: event.candidate.sdpMLineIndex,
+        });
+      }
+    };
+
+    const candidates = [];
+
+    async function start() {
+      console.log("[Client] Creating offer...");
+
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+
+      console.log("[Client] Sending offer...");
+      const response = await fetch("http://192.168.1.101/webrtc_control", {
+        method: "POST",
+        body: JSON.stringify({ sdp: offer.sdp, type: "offer" }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      const answer = await response.json();
+      console.log("[Client] Answer received");
+      await pc.setRemoteDescription(answer);
+    }
+
+    start();
+  </script>
+</body>
+</html>
