@@ -1,7 +1,0 @@
-ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
-update_config=1
-
-network={
-	ssid="JakesBeets"
-	psk=c1326318de382160d91e49f0daec599969d7409216a3416d38c661b6ebdf8496
-}
