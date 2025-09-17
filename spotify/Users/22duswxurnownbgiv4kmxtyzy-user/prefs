@@ -1,0 +1,4 @@
+audio.crossfade_v2=true
+audio.play_bitrate_non_metered_migrated=true
+connect.dial_devices="[]"
+audio.crossfade.time_v2=2429

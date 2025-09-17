@@ -1,0 +1,13 @@
+#!/bin/sh
+
+# Plugin name: viu-img
+# Description: Use viu to display images in a terminal window from nnn.
+# Dependencies: viu
+
+# Check if the selected file is an image
+if file --mime-type "$1" | grep -qE 'image/(jpeg|png|gif|webp)'; then
+    # Use viu to display the image
+    viu "$1"
+else
+    echo "Selected file is not a supported image format."
+fi

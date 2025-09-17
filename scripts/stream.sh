@@ -1,5 +1,6 @@
 #!/bin/sh
 
+<<<<<<< HEAD
 bitrate=$1
 keyframe_interval=$2
 width=$3
@@ -35,3 +36,16 @@ gst-launch-1.0 fdsrc fd=0 ! \
 #    rtph264pay config-interval=1 pt=96 ! \
 #    application/x-rtp,media=video,encoding-name=H264,payload=96 ! \
 #    webrtcbin name=sendrecv
+=======
+echo "Killing old streaming services"
+#pkill -f libcamera
+#pkill -f rpicam
+
+bitrate=$1
+keyframe_interval=$2
+
+echo "Starting rpicam-vid"
+echo $bitrate , $keyframe_interval
+rpicam-vid --width 1920 --height 1080 --bitrate $bitrate --intra $keyframe_interval --profile main --denoise cdn_hq --libav-video-codec-opts "preset=ultrafast;profile=high;tune=zerolatency" --flush 1 --no-raw 1 --framerate 40 --timeout 0 --nopreview --inline --listen -o udp://0.0.0.0:5000
+#  --codec h264 --level 4.2
+>>>>>>> bdf691d66e9724b56b2e1e4925b67f41e5d1c2dd

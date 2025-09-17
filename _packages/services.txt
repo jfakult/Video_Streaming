@@ -1,0 +1,16 @@
+avahi-daemon.service
+bluetooth.service
+docker.service
+iwd.service
+power-profiles-daemon.service
+seatd.service
+systemd-network-generator.service
+systemd-networkd-wait-online.service
+systemd-networkd.service
+systemd-resolved.service
+systemd-timesyncd.service
+avahi-daemon.socket
+systemd-networkd.socket
+systemd-userdbd.socket
+remote-fs.target
+reflector.timer
