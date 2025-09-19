@@ -54,3 +54,16 @@ defineExpose({ getVideoElem })
     />
   </div>
 </template>
+
+<style scoped>
+/* styles to make video fill parent container */
+#camera-stream-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+#video {
+  width: 100%;
+  height: 100%;
+}
+</style>

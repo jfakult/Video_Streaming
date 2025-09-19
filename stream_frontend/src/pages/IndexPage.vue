@@ -1,6 +1,6 @@
 <template>
   <q-page class="video-container">
-    <div class="backdrop"></div>
+    <div :class="'backdrop' + (!isStreamLoading ? ' streaming' : '')"></div>
 
     <div class="video-wrapper" ref="videoWrapper">
       <CameraStream
@@ -21,14 +21,14 @@
                 :name="isRecording ? 'stop_circle' : 'video_call'"
                 :color="isRecording ? recordingBlinker : (isStreamLoading || !supportsMediaRecorder ? 'grey-9' : 'white')"
                 size="2rem" />
-        <q-spinner-oval v-if="isVideoDownloading" color="grey-6" size="2rem" thickness="2" class="absolute center-spinner" />
+        <q-spinner-oval v-if="isVideoDownloading" color="grey-6" size="2rem" :thickness="2" class="absolute center-spinner" />
       </q-btn>
 
       <q-btn @click="takeScreenShot">
         <q-icon :style="isPhotoDownloading ? 'visibility: hidden' : ''"
                 name="add_a_photo"
                 :color="isStreamLoading ? 'grey-9' : 'white'" size="2rem" />
-        <q-spinner-oval v-if="isPhotoDownloading" color="grey-6" size="2rem" thickness="2" class="absolute center-spinner" />
+        <q-spinner-oval v-if="isPhotoDownloading" color="grey-6" size="2rem" :thickness="2" class="absolute center-spinner" />
       </q-btn>
     </div>
 
@@ -38,7 +38,7 @@
                      transition-show="none"
                      :class="splashLoading ? 'dark-background' : ''">
       <q-img src="icons/Wildstream_logo.png" width="24vw" class="absolute" :style="splashLoading ? '' : 'display: none;'" />
-      <q-spinner color="color-sunset-1" :size="splashLoading ? '30vw' : '20vw'" thickness="1" class="absolute"/>
+      <q-spinner color="color-sunset-1" :size="splashLoading ? '30vw' : '20vw'" :thickness="1" class="absolute"/>
       <h4 class="absolute text-color-sunset-1 big-font" :style="splashLoading ? 'display: none' : ''">Reconnecting...</h4>
     </q-inner-loading>
 
@@ -277,12 +277,12 @@ export default {
 </script>
 
 <style scoped>
-/* ⬇ same working styles you had (with fullscreen video fix) */
 html { position: fixed; }
 .backdrop {
   position: absolute; width: 100vw; height: 100vh;
   z-index: -1; background: var(--q-color-very-dark-background);
 }
+.backdrop.streaming { background: black; }
 .recording-indicator {
   position: absolute; width: 100vw; height: 100vh;
   top: 0; left: 0; z-index: 1;
@@ -294,10 +294,17 @@ html { position: fixed; }
   margin: 0; position: absolute; top: 50%;
   transform: translateY(-50%); overflow: hidden;
 }
-.video-wrapper { width: 100vw; height: 100vh; position: relative; }
+#camera-stream-container,#camera-stream-container #video {
+  width: 100%; height: 100%; position: relative;
+}
+video {
+  width: 100%;
+  height: 100%;
+}
+.video-wrapper { width: 100%; height: 100%; position: relative; }
 .video-wrapper video {
   position: absolute; top: 0; left: 0;
-  width: 100vw; height: 100vh; object-fit: cover; background: black;
+  width: 100%; height: 100%; object-fit: cover; background: black;
 }
 .bottom-right { position: absolute; bottom: 3vh; right: 3vh; z-index: 1; }
 .bottom-left { position: absolute; bottom: 3vh; left: 3vh; z-index: 1; }
